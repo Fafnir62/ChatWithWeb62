@@ -1,3 +1,10 @@
+try:
+    import pysqlite3 as sqlite3  # this comes from pysqlite3-binary
+    import sys
+    sys.modules["sqlite3"] = sqlite3
+except ImportError:
+    pass
+
 import streamlit as st
 import json
 from dotenv import load_dotenv
