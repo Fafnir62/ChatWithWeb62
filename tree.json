@@ -1,0 +1,86 @@
+{
+  "start": {
+    "frage": "Willkommen bei Fördermittel-Vergleich! Wobei dürfen wir Sie unterstützen?",
+    "optionen": {
+      "Ich suche Fördermittel für mein Vorhaben": "ziel_bekannt",
+      "Ich weiß noch nicht genau, was gefördert werden kann": "guided_discovery"
+    }
+  },
+  "ziel_bekannt": {
+    "frage": "Geht es um Forschung & Entwicklung, Investitionen, Digitalisierung oder Gründung?",
+    "optionen": {
+      "Forschung & Entwicklung": "fzulg_start",
+      "Investitionen": "investitionen_start",
+      "Digitalisierung": "digitalisierung_start",
+      "Gründung": "gruendung_start",
+      "Sonstiges": "kontakt_beratung"
+    }
+  },
+  "guided_discovery": {
+    "frage": "Haben Sie aktuell ein konkretes Projekt oder Maßnahme geplant?",
+    "optionen": {
+      "Ja, ein konkretes Projekt": "ziel_bekannt",
+      "Nein, ich will mich erstmal informieren": "kontakt_beratung"
+    }
+  },
+  "fzulg_start": {
+    "frage": "Führen Sie selbst Forschung durch oder beauftragen Sie Dritte damit?",
+    "optionen": {
+      "Eigenbetriebliche Forschung": "fzulg_daten",
+      "Auftragsforschung": "fzulg_daten",
+      "Kooperationsvorhaben": "fzulg_daten"
+    }
+  },
+  "fzulg_daten": {
+    "frage": "Ist Ihr Unternehmen in Deutschland steuerpflichtig und existiert es seit ≥ 1 Jahr?",
+    "optionen": {
+      "Ja": "fzulg_projektinfo",
+      "Nein": "fzulg_kein_anspruch"
+    }
+  },
+  "fzulg_projektinfo": {
+    "frage": "Wann hat Ihr Forschungsprojekt begonnen?",
+    "optionen": {
+      "Nach dem 01.01.2020": "fzulg_antrag_bsfsz",
+      "Vor dem 01.01.2020": "fzulg_kein_anspruch"
+    }
+  },
+  "fzulg_antrag_bsfsz": {
+    "antwort": "Sie können eine Bescheinigung bei der BSFZ beantragen und anschließend den Antrag beim Finanzamt stellen.",
+    "button_label": "Zum Fördermittel-Check",
+    "button_link": "https://www.xn--frdermittel-vergleich-hec.de/foerdermittelcheck/"
+  },
+  "fzulg_kein_anspruch": {
+    "antwort": "Leider ist Ihr Vorhaben derzeit nicht förderfähig. Wir beraten Sie gern zu anderen Möglichkeiten.",
+    "button_label": "Zum Fördermittel-Check",
+    "button_link": "https://www.xn--frdermittel-vergleich-hec.de/foerdermittelcheck/"
+  },
+  "investitionen_start": {
+    "frage": "Geht es um Investitionen in Maschinen & Technik, Gebäude, Energieeffizienz oder anderes?",
+    "optionen": {
+      "Maschinen & Technik": "kontakt_beratung",
+      "Gebäude": "kontakt_beratung",
+      "Energieeffizienz": "kontakt_beratung",
+      "Sonstiges": "kontakt_beratung"
+    }
+  },
+  "digitalisierung_start": {
+    "frage": "Wird neue Hard-/Software angeschafft oder sollen Prozesse digitalisiert werden?",
+    "optionen": {
+      "Neue Technik": "kontakt_beratung",
+      "Prozesse digitalisieren": "kontakt_beratung"
+    }
+  },
+  "gruendung_start": {
+    "frage": "Sind Sie bereits gegründet oder noch in Planung?",
+    "optionen": {
+      "Bereits gegründet": "kontakt_beratung",
+      "Noch in Planung": "kontakt_beratung"
+    }
+  },
+  "kontakt_beratung": {
+    "antwort": "Wir helfen Ihnen gern persönlich weiter.",
+    "button_label": "Zum Fördermittel-Check",
+    "button_link": "https://www.xn--frdermittel-vergleich-hec.de/foerdermittelcheck/"
+  }
+}
