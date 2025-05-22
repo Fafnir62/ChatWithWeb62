@@ -1,86 +1,66 @@
 {
   "start": {
-    "frage": "Willkommen bei Fördermittel-Vergleich! Wobei dürfen wir Sie unterstützen?",
+    "frage": "👋 Hello! I’m your Funding Assistant. What would you like to do?",
     "optionen": {
-      "Ich suche Fördermittel für mein Vorhaben": "ziel_bekannt",
-      "Ich weiß noch nicht genau, was gefördert werden kann": "guided_discovery"
+      "🔍 Search for funding for a specific project": "purpose",
+      "💡 Explore general funding opportunities": "inspire"
     }
   },
-  "ziel_bekannt": {
-    "frage": "Geht es um Forschung & Entwicklung, Investitionen, Digitalisierung oder Gründung?",
+  "purpose": {
+    "frage": "Great! Let’s gather some information to match you with suitable funding programs.",
     "optionen": {
-      "Forschung & Entwicklung": "fzulg_start",
-      "Investitionen": "investitionen_start",
-      "Digitalisierung": "digitalisierung_start",
-      "Gründung": "gruendung_start",
-      "Sonstiges": "kontakt_beratung"
+      "🔬 Research & Development": "location",
+      "🏠 Renovation / Energy Efficiency": "location",
+      "🚀 Start-up / Business Expansion": "location",
+      "🌱 Renewable Energy": "location",
+      "🏭 Plant Construction": "location",
+      "⚙️ Machinery Financing": "location"
     }
   },
-  "guided_discovery": {
-    "frage": "Haben Sie aktuell ein konkretes Projekt oder Maßnahme geplant?",
+  "location": {
+    "frage": "📍 Where is your company based? (City, Region, Country)",
     "optionen": {
-      "Ja, ein konkretes Projekt": "ziel_bekannt",
-      "Nein, ich will mich erstmal informieren": "kontakt_beratung"
+      "Continue": "industry"
     }
   },
-  "fzulg_start": {
-    "frage": "Führen Sie selbst Forschung durch oder beauftragen Sie Dritte damit?",
+  "industry": {
+    "frage": "🏢 What industry is your business in?",
     "optionen": {
-      "Eigenbetriebliche Forschung": "fzulg_daten",
-      "Auftragsforschung": "fzulg_daten",
-      "Kooperationsvorhaben": "fzulg_daten"
+      "Continue": "products"
     }
   },
-  "fzulg_daten": {
-    "frage": "Ist Ihr Unternehmen in Deutschland steuerpflichtig und existiert es seit ≥ 1 Jahr?",
+  "products": {
+    "frage": "🔧 What products or services do you offer?",
     "optionen": {
-      "Ja": "fzulg_projektinfo",
-      "Nein": "fzulg_kein_anspruch"
+      "Continue": "project"
     }
   },
-  "fzulg_projektinfo": {
-    "frage": "Wann hat Ihr Forschungsprojekt begonnen?",
+  "project": {
+    "frage": "📝 Can you describe your project in a few sentences?",
     "optionen": {
-      "Nach dem 01.01.2020": "fzulg_antrag_bsfsz",
-      "Vor dem 01.01.2020": "fzulg_kein_anspruch"
+      "Continue": "cost"
     }
   },
-  "fzulg_antrag_bsfsz": {
-    "antwort": "Sie können eine Bescheinigung bei der BSFZ beantragen und anschließend den Antrag beim Finanzamt stellen.",
-    "button_label": "Zum Fördermittel-Check",
-    "button_link": "https://www.xn--frdermittel-vergleich-hec.de/foerdermittelcheck/"
-  },
-  "fzulg_kein_anspruch": {
-    "antwort": "Leider ist Ihr Vorhaben derzeit nicht förderfähig. Wir beraten Sie gern zu anderen Möglichkeiten.",
-    "button_label": "Zum Fördermittel-Check",
-    "button_link": "https://www.xn--frdermittel-vergleich-hec.de/foerdermittelcheck/"
-  },
-  "investitionen_start": {
-    "frage": "Geht es um Investitionen in Maschinen & Technik, Gebäude, Energieeffizienz oder anderes?",
+  "cost": {
+    "frage": "💰 What’s your estimated total project cost?",
     "optionen": {
-      "Maschinen & Technik": "kontakt_beratung",
-      "Gebäude": "kontakt_beratung",
-      "Energieeffizienz": "kontakt_beratung",
-      "Sonstiges": "kontakt_beratung"
+      "Continue": "own_funds"
     }
   },
-  "digitalisierung_start": {
-    "frage": "Wird neue Hard-/Software angeschafft oder sollen Prozesse digitalisiert werden?",
+  "own_funds": {
+    "frage": "💸 How much of that can you cover with your own funds?",
     "optionen": {
-      "Neue Technik": "kontakt_beratung",
-      "Prozesse digitalisieren": "kontakt_beratung"
+      "Submit": "chat"
     }
   },
-  "gruendung_start": {
-    "frage": "Sind Sie bereits gegründet oder noch in Planung?",
-    "optionen": {
-      "Bereits gegründet": "kontakt_beratung",
-      "Noch in Planung": "kontakt_beratung"
-    }
+  "chat": {
+    "antwort": "✅ Thank you! Based on your answers, I’ll now check the best funding programs for you.",
+    "button_label": "Go to chat",
+    "button_link": "/"
   },
-  "kontakt_beratung": {
-    "antwort": "Wir helfen Ihnen gern persönlich weiter.",
-    "button_label": "Zum Fördermittel-Check",
-    "button_link": "https://www.xn--frdermittel-vergleich-hec.de/foerdermittelcheck/"
+  "inspire": {
+    "antwort": "🧠 You can explore various types of funding programs by browsing our knowledge base.",
+    "button_label": "Open Funding Guide",
+    "button_link": "https://www.foerderdatenbank.de/"
   }
 }

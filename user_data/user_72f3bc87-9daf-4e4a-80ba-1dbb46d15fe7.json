@@ -1,0 +1,13 @@
+{
+  "user_id": "72f3bc87-9daf-4e4a-80ba-1dbb46d15fe7",
+  "answers": {
+    "start": "🔍 Search for funding for a specific project",
+    "purpose": "🔬 Research & Development",
+    "location": "magdeburg",
+    "industry": "Energy utilities",
+    "products": "District-heating networks",
+    "project": "We want to build a new municipal heat grid using solar thermal and biomass",
+    "cost": "8 000 000",
+    "own_funds": "2 000 000"
+  }
+}

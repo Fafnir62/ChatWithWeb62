@@ -1,199 +1,220 @@
-# ── sqlite3 monkey‐patch for Chromadb compatibility (just in case) ──
-try:
-    import pysqlite3 as sqlite3
-    import sys
-    sys.modules["sqlite3"] = sqlite3
-except ImportError:
-    pass
-
-import os
-import json
-import streamlit as st
+# app.py  –  Funding-Assistant with score-based programme matching
+# ---------------------------------------------------------------
+import os, json, uuid, streamlit as st
+from pathlib import Path
 from dotenv import load_dotenv
 
-# LangChain core messages
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-# FAISS & embeddings
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-
-# Conversational chain + memory
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain_core.prompts import ChatPromptTemplate
 
-# ———————————————————————————————————————————————————————
-# CONFIG & STYLE
-# ———————————————————————————————————————————————————————
-load_dotenv()  # loads OPENAI_API_KEY
+# NEW → helper for funding-programme matching
+from funding_matcher import build_or_load_index, matches_above_threshold
 
-st.set_page_config(page_title="Fördermittel-Chat", page_icon="🤝", layout="wide")
-PINK = "#D9005A"
-st.markdown(f"""
-<style>
-.reportview-container .main {{ background: {PINK}; color: white; }}
-.sidebar .sidebar-content {{ background: {PINK}; color: white; }}
-.stButton>button {{
-  background: white;
-  color: {PINK};
-  font-weight: bold;
-  width: 100%;
-  margin-bottom: 8px;
-}}
-</style>
-""", unsafe_allow_html=True)
 
-st.image("Foerdermittel Vergleich.png", width=200)
+# ─── ENV & CONFIG ───────────────────────────────────────────────
+load_dotenv()
+st.set_page_config(page_title="Fördermittel-Chat",
+                   page_icon="🤖",
+                   layout="wide")
 
-# ———————————————————————————————————————————————————————
-# LOAD DATA
-# ———————————————————————————————————————————————————————
-with open("links.json", "r", encoding="utf-8") as f:
-    LINKS = json.load(f)
-with open("tree.json", "r", encoding="utf-8") as f:
+# ─── SESSION STATE ──────────────────────────────────────────────
+st.session_state.setdefault("tree_node", "start")
+st.session_state.setdefault("chat_history", [])
+st.session_state.setdefault("tree_complete", False)
+st.session_state.setdefault("tree_answers", {})
+st.session_state.setdefault("user_id", str(uuid.uuid4()))
+st.session_state.setdefault("last_tree_msg", None)
+st.session_state.setdefault("matches_shown", False)
+
+# ─── LOAD TREE & LINKS ──────────────────────────────────────────
+with open("tree.json", encoding="utf-8") as f:
     TREE = json.load(f)
+with open("links.json", encoding="utf-8") as f:
+    LINKS = json.load(f)
 
-# ———————————————————————————————————————————————————————
-# INIT OR LOAD FAISS
-# ———————————————————————————————————————————————————————
+# ─── FIRST TREE MESSAGE (only once) ─────────────────────────────
+def push_first_tree_msg():
+    first = TREE[st.session_state.tree_node].get("frage") \
+            or TREE[st.session_state.tree_node].get("antwort")
+    if first and first != st.session_state.last_tree_msg:
+        st.session_state.chat_history.append(AIMessage(content=first))
+        st.session_state.last_tree_msg = first
+
+if not st.session_state.chat_history:
+    push_first_tree_msg()
+
+# ─── INIT VECTOR STORE FOR WEB SOURCES ──────────────────────────
 def init_faiss(urls, persist_dir="faiss_index"):
     emb = OpenAIEmbeddings()
     if os.path.isdir(persist_dir):
-        return FAISS.load_local(persist_dir, emb, allow_dangerous_deserialization=True)
+        return FAISS.load_local(persist_dir, emb,
+                                allow_dangerous_deserialization=True)
     docs = []
-    for url in urls:
-        docs.extend(WebBaseLoader(url).load())
+    for u in urls:
+        docs.extend(WebBaseLoader(u).load())
     chunks = RecursiveCharacterTextSplitter().split_documents(docs)
     vs = FAISS.from_documents(chunks, emb)
     vs.save_local(persist_dir)
     return vs
 
 if "vector_store" not in st.session_state:
-    with st.spinner("Wissensbasis (FAISS) wird aufgebaut…"):
+    with st.spinner("🔄 Wissensbasis wird aufgebaut…"):
         st.session_state.vector_store = init_faiss(LINKS)
 
-# ———————————————————————————————————————————————————————
-# SESSION STATE & CHAIN INIT
-# ———————————————————————————————————————————————————————
-st.session_state.setdefault("tree_node", "start")
-st.session_state.setdefault("chat_history", [])
-
+# ─── INIT LLM CHAT / RAG ────────────────────────────────────────
 if "conversation_chain" not in st.session_state:
-    # 1) Our LLM
     llm = ChatOpenAI(temperature=0)
-
-    # 2) Explicitly record question→answer so follow-ups get rewritten
     memory = ConversationBufferMemory(
         memory_key="chat_history",
         return_messages=True,
         input_key="question",
         output_key="answer",
     )
-
-    # 3) Base retriever from FAISS
     retriever = st.session_state.vector_store.as_retriever()
-
-    # 4) Prompt: use context *if* it contains the answer; otherwise fall back
-    answer_prompt = ChatPromptTemplate.from_messages([
-        (
-            "system",
-            "Du bist ein Experte für Fördermittel in Deutschland und Europa. "
-            "Nutze den folgenden Kontext. "
-            "Wenn die Antwort im Kontext steht, antworte ausschließlich darauf. "
-            "Ist sie nicht im Kontext enthalten, beantworte basierend auf deinem allgemeinen Wissen zu Fördermitteln. "
-            "Wenn die Frage nicht zum Bereich Fördermittel gehört, antworte genau:\n\n"
-            "\"Die Frage kann und möchte ich nicht beantworten, denn meine Expertise liegt bei Fördermitteln. "
-            "Stell mir bitte eine Frage rund um das Thema Fördermittel in Deutschland, Europa oder in einem bestimmten Bundesland.\"\n\n"
-            "Kontext:\n{context}"
-        ),
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "Du bist ein Experte für Fördermittel in Deutschland und Europa. "
+         "Nutze den folgenden Kontext. Wenn die Antwort im Kontext steht, "
+         "antworte nur damit. Sonst nutze dein Wissen. Wenn es keine "
+         "Förderfrage ist, antworte:\n"
+         "\"Die Frage kann und möchte ich nicht beantworten…\"\n\nKontext:\n{context}"),
         ("user", "{question}")
     ])
-
-    # 5) Build the conversational-retrieval chain
     st.session_state.conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=retriever,
-        memory=memory,
-        combine_docs_chain_kwargs={"prompt": answer_prompt}
+        llm=llm, retriever=retriever, memory=memory,
+        combine_docs_chain_kwargs={"prompt": prompt}
     )
 
-# ———————————————————————————————————————————————————————
-# TREE CALLBACK
-# ———————————————————————————————————————————————————————
-def advance_tree(next_node: str):
+# ─── FUNDING-PROGRAMME INDEX (built once) ───────────────────────
+if "programme_index" not in st.session_state:
+    st.session_state.programme_index = build_or_load_index()
+
+# ─── SAVE USER ANSWERS ──────────────────────────────────────────
+def save_user_answers():
+    os.makedirs("user_data", exist_ok=True)
+    with open(f"user_data/user_{st.session_state.user_id}.json", "w",
+              encoding="utf-8") as f:
+        json.dump({"user_id": st.session_state.user_id,
+                   "answers":  st.session_state.tree_answers},
+                  f, indent=2, ensure_ascii=False)
+
+# ─── ADVANCE TREE ───────────────────────────────────────────────
+def advance_tree(next_node: str, user_reply: str):
+    cur = st.session_state.tree_node
+    st.session_state.pop(f"input_{cur}", None)
+
+    cur_q = TREE[cur].get("frage") or TREE[cur].get("antwort") or ""
+    kept = []
+    for m in st.session_state.chat_history:
+        kept.append(m)
+        if isinstance(m, AIMessage) and m.content.strip() == cur_q.strip():
+            break
+    st.session_state.chat_history = kept
+
+    st.session_state.chat_history.append(HumanMessage(content=user_reply))
+    st.session_state.tree_answers[cur] = user_reply
     st.session_state.tree_node = next_node
 
-# ———————————————————————————————————————————————————————
-# CHAT CALLBACK
-# ———————————————————————————————————————————————————————
-def handle_send():
-    q = st.session_state.user_text.strip()
-    if not q:
+    nxt_q = TREE[next_node].get("frage") or TREE[next_node].get("antwort")
+    if nxt_q and nxt_q != st.session_state.last_tree_msg:
+        st.session_state.chat_history.append(AIMessage(content=nxt_q))
+        st.session_state.last_tree_msg = nxt_q
+
+    st.session_state.tree_complete = (next_node == "chat")
+    save_user_answers()
+
+# ─── HANDLE FREE CHAT ───────────────────────────────────────────
+def handle_free_chat(txt: str):
+    st.session_state.chat_history.append(HumanMessage(content=txt))
+    ans = st.session_state.conversation_chain({"question": txt})["answer"]
+    st.session_state.chat_history.append(AIMessage(content=ans))
+
+# ─── SHOW MATCHES ONCE WHEN TREE DONE ───────────────────────────
+def show_funding_matches(min_score: float = 0.30, k: int = 20):
+    """
+    Display all programmes with similarity score ≤ min_score.
+    """
+    if st.session_state.matches_shown or st.session_state.programme_index is None:
         return
 
-    # 1) Add to UI history
-    st.session_state.chat_history.append(HumanMessage(content=q))
+    profile = "\n".join(f"{k}: {v}"
+                        for k, v in st.session_state.tree_answers.items())
 
-    # 2) Run the chain with just the new question — it will:
-    #    • rewrite the question using full memory
-    #    • retrieve from FAISS
-    #    • combine via our prompt (which now falls back to general knowledge)
-    res = st.session_state.conversation_chain({"question": q})
-    a = res["answer"]
+    programmes = matches_above_threshold(profile,
+                                         min_score=min_score,
+                                         k=k)
 
-    # 3) Record and display
-    st.session_state.chat_history.append(AIMessage(content=a))
-    st.session_state.user_text = ""
+    with st.chat_message("ai"):
+        if not programmes:
+            st.markdown("❌ Leider passt kein Förderprogramm ausreichend zu Ihrem Profil.")
+        else:
+            st.markdown(f"🔍 **Programme mit Score ≤ {min_score:.2f}:**")
+            for p in programmes:
+                st.markdown(
+                    f"**{p['title']}**  \n"
+                    f"*Kategorie*: {p['category']}  \n"
+                    f"*Score*: {p['score']:.3f} • *Call-ID*: {p['call_id']}  \n"
+                    f"*Frist*: {p['submission_deadline']}  \n"
+                    f"{p['description']}"
+                )
 
-# ———————————————————————————————————————————————————————
-# RENDER DECISION TREE (top)
-# ———————————————————————————————————————————————————————
-node = TREE[st.session_state.tree_node]
-if "frage" in node:
-    st.markdown(f"### {node['frage']}")
-    for label, nxt in node["optionen"].items():
-        st.button(
-            label,
-            key=f"tree_{st.session_state.tree_node}_{label}",
-            on_click=advance_tree,
-            args=(nxt,)
-        )
-else:
-    st.markdown(f"**{node['antwort']}**")
-    st.markdown(f"""
-      <a href="{node['button_link']}" target="_blank">
-        <button style="
-          background-color: white;
-          color: {PINK};
-          padding: 8px 16px;
-          border: none;
-          font-weight: bold;
-          width: 100%;
-          margin-top: 8px;
-        ">
-          {node['button_label']}
-        </button>
-      </a>
-    """, unsafe_allow_html=True)
+    st.session_state.matches_shown = True
 
-# ———————————————————————————————————————————————————————
-# RENDER CHAT (40 px below tree)
-# ———————————————————————————————————————————————————————
-st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
-for msg in st.session_state.chat_history:
-    role = "human" if isinstance(msg, HumanMessage) else "ai"
+# ─── RENDER CHAT & INPUTS ───────────────────────────────────────
+current = TREE[st.session_state.tree_node]
+need_input = not st.session_state.tree_complete
+
+for m in st.session_state.chat_history:
+    role = "human" if isinstance(m, HumanMessage) else "ai"
     with st.chat_message(role):
-        st.write(msg.content)
+        st.markdown(m.content)
 
-# ———————————————————————————————————————————————————————
-# CHAT INPUT (single-step)
-# ———————————————————————————————————————————————————————
-st.text_input(
-    label="Ihre Frage zu Fördermitteln…",
-    key="user_text",
-    on_change=handle_send,
-    placeholder="Tippen und Enter drücken…"
-)
+    if (need_input and isinstance(m, AIMessage)
+        and m.content.strip() == (current.get("frage")
+                                  or current.get("antwort", "")).strip()):
+
+        need_input = False
+        if "optionen" in current:
+            keys = list(current["optionen"].keys())
+
+            # text-input node
+            if keys in (["Continue"], ["Submit"]):
+                reply = st.text_input(
+                    "✏️ Antwort eingeben",
+                    value="",
+                    key=f"input_{st.session_state.tree_node}"
+                )
+                if st.button("✅ Absenden"):
+                    if reply.strip():
+                        advance_tree(current["optionen"][keys[0]], reply.strip())
+                        st.rerun()
+                    else:
+                        st.warning("Bitte etwas eingeben…")
+
+            # multiple-choice node
+            else:
+                cols = st.columns(len(current["optionen"]))
+                for i, (lbl, nxt) in enumerate(current["optionen"].items()):
+                    with cols[i]:
+                        if st.button(lbl):
+                            advance_tree(nxt, lbl)
+                            st.rerun()
+
+        elif "button_label" in current:   # leaf with external link
+            st.link_button(current["button_label"],
+                           current["button_link"])
+
+# ─── ALWAYS-ON FREE CHAT ────────────────────────────────────────
+if txt := st.chat_input("💬 Assistent fragen…"):
+    handle_free_chat(txt)
+    st.rerun()
+
+# ─── SHOW PROGRAMME MATCHES (once) ──────────────────────────────
+if st.session_state.tree_complete:
+    show_funding_matches(min_score=0.45, k=20)
