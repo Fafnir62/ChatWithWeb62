@@ -1,0 +1,431 @@
+{
+    "Forschung und Entwicklung": [
+    {
+      "title": "Initialfonds Bremen",
+      "description": "Der Initialfonds des Landes Bremen unterstützt Existenzgründerinnen und -gründer mit Beteiligungskapital in der Frühphase. Ziel ist die Förderung innovativer Unternehmensgründungen durch Bereitstellung von Eigenkapital in Form von stillen Beteiligungen.",
+      "eligible_applicants": [
+        "Existenzgründerinnen und -gründer mit innovativen Geschäftsideen in der Frühphase"
+      ],
+      "funding_area": "Bremen",
+      "call_id": "Initialfonds-Bremen-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Beteiligungskapital",
+        "Frühphasenfinanzierung",
+        "Innovationsförderung",
+        "Existenzgründung",
+        "Stille Beteiligung"
+      ],
+      "förderart": ["Beteiligung"],
+      "höhe_der_förderung": "Bis zu 750.000 € als stille Beteiligung für 12 Monate"
+    },
+    {
+      "title": "Brandenburger Innovationsfachkräfte (BIF 2022)",
+      "description": "Das Land Brandenburg unterstützt kleine und mittlere Unternehmen (KMU) bei der Fachkräftesicherung und der Förderung von Innovationspotenzialen durch die Beschäftigung von Werkstudierenden und Innovationsassistentinnen bzw. -assistenten im Rahmen betrieblicher Innovationsaufgaben.",
+      "eligible_applicants": [
+        "Kleine und mittlere Unternehmen (KMU) mit Sitz oder Betriebsstätte im Land Brandenburg"
+      ],
+      "funding_area": "Brandenburg",
+      "call_id": "BIF-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Fachkräftesicherung",
+        "Innovationsförderung",
+        "Werkstudierende",
+        "Innovationsassistenten",
+        "KMU",
+        "Brandenburg",
+        "ESF+"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 60 % der förderfähigen Gesamtausgaben",
+      "laufzeit": "Werkstudierende: 6–12 Monate; Innovationsassistenten: mindestens 12 Monate"
+    },
+        {
+      "title": "Beratungen zu Innovation und Technologietransfer Rheinland-Pfalz (BITT)",
+      "description": "Das Land Rheinland-Pfalz unterstützt kleine und mittlere Unternehmen (KMU) bei der Inanspruchnahme externer Beratungsleistungen zur Förderung von Innovationen und Technologietransfer. Ziel ist es, die Innovationsfähigkeit der Unternehmen zu stärken und den Technologietransfer zu fördern.",
+      "eligible_applicants": [
+        "Kleine und mittlere Unternehmen (KMU) mit Sitz oder Betriebsstätte in Rheinland-Pfalz"
+      ],
+      "funding_area": "Rheinland-Pfalz",
+      "call_id": "BITT-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Innovation",
+        "Technologietransfer",
+        "Beratung",
+        "KMU",
+        "Rheinland-Pfalz"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 50 % der förderfähigen Beratungskosten"
+    },
+        {
+      "title": "Fonds für Innovation und Beschäftigung (FIB)",
+      "description": "Die FIB GmbH, eine Tochtergesellschaft der Investitions- und Strukturbank Rheinland-Pfalz (ISB), stellt mittelständischen Unternehmen in Rheinland-Pfalz Wagniskapital zur Verfügung. Gefördert werden technologieorientierte, innovative Projekte sowie beschäftigungsintensive Vorhaben, die neue Produkte, Verfahren oder Dienstleistungen entwickeln und im Markt einführen oder zur nachhaltigen Schaffung oder Sicherung wettbewerbsfähiger und zukunftsträchtiger Dauerarbeitsplätze beitragen.",
+      "eligible_applicants": [
+        "Kleine und mittlere Produktions-, Handwerks- und Dienstleistungsunternehmen der gewerblichen Wirtschaft gemäß KMU-Definition der EU mit Sitz oder Betriebsstätte in Rheinland-Pfalz"
+      ],
+      "funding_area": "Rheinland-Pfalz",
+      "call_id": "FIB-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Beteiligung",
+        "Wagniskapital",
+        "Innovationsförderung",
+        "Beschäftigung",
+        "KMU",
+        "Rheinland-Pfalz",
+        "ISB"
+      ],
+      "förderart": ["Beteiligung"],
+      "höhe_der_förderung": "In der Regel zwischen 100.000 € und 500.000 €, in Ausnahmefällen bis zu 1.000.000 €",
+      "laufzeit": "Nach Vereinbarung"
+    },
+    {
+      "title": "Forschungsinfrastrukturen.NRW",
+      "description": "Das Land Nordrhein-Westfalen unterstützt im Rahmen des EFRE/JTF-Programms 2021–2027 Investitionen in umsetzungsorientierte Forschungsinfrastrukturen. Gefördert werden unter anderem die Anschaffung von Geräten und Anlagen, erforderliche bauliche Maßnahmen sowie damit verbundene Dienstleistungen. Ziel ist die Stärkung von Forschung, technologischer Entwicklung und Innovation in NRW.",
+      "eligible_applicants": [
+        "Kleine und mittlere Unternehmen (KMU)",
+        "Kommunale Unternehmen und Einrichtungen",
+        "Forschungs- und Bildungseinrichtungen",
+        "Kammern, Vereine und Stiftungen"
+      ],
+      "funding_area": "Nordrhein-Westfalen",
+      "call_id": "FIS-NRW-2025",
+      "submission_deadline": "2025-03-31",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Forschungsinfrastruktur",
+        "EFRE",
+        "Innovation",
+        "Technologietransfer",
+        "NRW",
+        "Geräteförderung",
+        "Anwendungszentren"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 90 % der förderfähigen Ausgaben",
+      "laufzeit": "Projektabhängig"
+    }
+  ],
+
+
+  "Sanierung (insbesondere Energiesanierung)": [
+    {
+      "title": "Förderrichtlinie Altlasten",
+      "description": "Der Freistaat Thüringen unterstützt die Untersuchung und Sanierung von altlastenverdächtigen Flächen sowie die Beseitigung anderer stofflicher Bodenverunreinigungen. Gefördert werden Maßnahmen wie Erkundung, Gefährdungsabschätzung, Sanierungsplanung, Sanierung einschließlich sanierungsbedingtem Abriss, innovative Verfahren zur Schadstoffminderung sowie Überwachung und Eigenkontrolle.",
+      "eligible_applicants": [
+        "Körperschaften des öffentlichen Rechts (z. B. Gemeinden, Gemeindeverbände, Landkreise, kreisfreie Städte, kommunale Zweckverbände)",
+        "Sonstige juristische Personen des öffentlichen Rechts",
+        "Juristische Personen des privaten Rechts",
+        "Natürliche Personen"
+      ],
+      "funding_area": "Thüringen",
+      "call_id": "Altlasten-TH-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Altlasten",
+        "Bodensanierung",
+        "Umweltschutz",
+        "Thüringen",
+        "Bodenverunreinigung",
+        "Sanierung",
+        "Gefährdungsabschätzung"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 100 % der förderfähigen Kosten",
+      "laufzeit": "Projektabhängig"
+    },
+    {
+      "title": "Energetische Sanierung von Einrichtungen der Schulinfrastruktur",
+      "description": "Das Land Schleswig-Holstein unterstützt finanzschwache Kommunen bei Investitionen in die energetische Sanierung und Optimierung von Einrichtungen der Schulinfrastruktur. Gefördert werden Maßnahmen an Schulen in öffentlicher Trägerschaft, einschließlich schulisch genutzter Sport- und Schwimmhallen sowie Schulwohnheimen. Auch Ersatzbauten können gefördert werden, wenn eine Sanierung unwirtschaftlich ist.",
+      "eligible_applicants": [
+        "Finanzschwache Gemeinden, Städte und Kreise als Träger öffentlicher allgemeinbildender und berufsbildender Schulen sowie Förderzentren in Schleswig-Holstein"
+      ],
+      "funding_area": "Schleswig-Holstein",
+      "call_id": "KInvFG-SH-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Energetische Sanierung",
+        "Schulinfrastruktur",
+        "KInvFG",
+        "Schleswig-Holstein",
+        "IB.SH",
+        "Kommunalinvestitionsförderungsgesetz"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 90 % der zuwendungsfähigen Ausgaben",
+      "laufzeit": "Projektabhängig"
+    },
+    {
+      "title": "Förderung im Rahmen des Denkmalschutz-Sonderprogramms",
+      "description": "Das Denkmalschutz-Sonderprogramm unterstützt die Erhaltung und Restaurierung national bedeutsamer Kulturdenkmäler in Sachsen-Anhalt. Gefördert werden Maßnahmen zum Substanzerhalt und zur Restaurierung, einschließlich historischer Orgeln, die das kulturelle Erbe prägen.",
+      "eligible_applicants": [
+        "Privatpersonen",
+        "Unternehmen",
+        "Kommunen",
+        "Öffentliche Einrichtungen",
+        "Vereine und Verbände",
+        "Bildungs- und Forschungseinrichtungen"
+      ],
+      "funding_area": "Sachsen-Anhalt",
+      "call_id": "DSP-ST-2025",
+      "submission_deadline": "2025-03-22",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Denkmalschutz",
+        "Restaurierung",
+        "Kulturdenkmal",
+        "Orgel",
+        "Sachsen-Anhalt",
+        "BKM",
+        "Substanzerhalt"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 50 % der förderfähigen Gesamtkosten",
+      "laufzeit": "Projektabhängig"
+    },
+    {
+      "title": "Energieberatung für Nichtwohngebäude, Anlagen und Systeme (EBN)",
+      "description": "Das Förderprogramm unterstützt Unternehmen, Kommunen und andere Einrichtungen bei der Durchführung von Energieberatungen für Nichtwohngebäude, Anlagen und Systeme. Ziel ist es, durch qualifizierte Beratungen Energieeinsparpotenziale zu identifizieren und Maßnahmen zur Steigerung der Energieeffizienz umzusetzen.",
+      "eligible_applicants": [
+        "Unternehmen",
+        "Kommunen",
+        "Öffentliche Einrichtungen",
+        "Verbände und Vereine"
+      ],
+      "funding_area": "Bund",
+      "call_id": "EBN-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-24",
+      "created": "2025-05-24",
+      "keywords": [
+        "Energieberatung",
+        "Nichtwohngebäude",
+        "Anlagen",
+        "Systeme",
+        "Energieeffizienz",
+        "BMWK",
+        "BAFA"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "50 % der förderfähigen Beratungskosten",
+      "laufzeit": "Projektabhängig"
+    }
+  ],
+
+  "Existenzgründung- & Festigung": [
+    {
+      "title": "Starthaus Coachingprogramm (BRUT)",
+      "description": "Das Land Bremen unterstützt fachlich qualifizierte Existenzgründerinnen und -gründer mit einem Coachingprogramm bei der erfolgreichen Gründung ihres innovativen Unternehmens. Gefördert werden Qualifizierungs- und Beratungsmaßnahmen sowie finanzielle Unterstützung zum Lebensunterhalt.",
+      "eligible_applicants": [
+        "Existenzgründerinnen und -gründer in der Gründungsvorbereitungsphase mit (Fach-)Hochschulabschluss oder abgeschlossener Berufsausbildung"
+      ],
+      "funding_area": "Bremen",
+      "call_id": "BRUT-2025",
+      "submission_deadline": "2025-01-31",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Coaching",
+        "Existenzgründung",
+        "Innovationsförderung",
+        "Starthaus Bremen",
+        "Businessplanung"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Maximal 8.500 €",
+      "antragsfristen": ["31. Januar", "31. August"]
+    },
+    {
+      "title": "Initialfonds Bremen",
+      "description": "Der Initialfonds des Landes Bremen unterstützt Existenzgründerinnen und -gründer mit Beteiligungskapital in der Frühphase. Ziel ist die Förderung innovativer Unternehmensgründungen durch Bereitstellung von Eigenkapital in Form von stillen Beteiligungen.",
+      "eligible_applicants": [
+        "Existenzgründerinnen und -gründer mit innovativen Geschäftsideen in der Frühphase"
+      ],
+      "funding_area": "Bremen",
+      "call_id": "Initialfonds-Bremen-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Beteiligungskapital",
+        "Frühphasenfinanzierung",
+        "Innovationsförderung",
+        "Existenzgründung",
+        "Stille Beteiligung"
+      ],
+      "förderart": ["Beteiligung"],
+      "höhe_der_förderung": "Bis zu 750.000 € als stille Beteiligung für 12 Monate"
+    },
+    {
+      "title": "Wachstumsfonds Mittelstand Sachsen",
+      "description": "Der Wachstumsfonds Mittelstand Sachsen unterstützt wachstumsorientierte kleine und mittlere Unternehmen (KMU) mit Sitz oder Betriebsstätte in Sachsen durch Bereitstellung von Eigenkapital oder eigenkapitalähnlichen Mitteln. Ziel ist die Finanzierung von Unternehmenswachstum, Nachfolgelösungen, strategischen Zukäufen oder Investitionen.",
+      "eligible_applicants": [
+        "Wachstumsorientierte kleine und mittlere Unternehmen (KMU) mit Sitz oder Betriebsstätte in Sachsen, die über ein tragfähiges Unternehmenskonzept verfügen, ein starkes Wachstum erkennen lassen oder innovative und technologierorientierte Produkte, Produktionsverfahren oder Dienstleistungen anbieten."
+      ],
+      "funding_area": "Sachsen",
+      "call_id": "WMS-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-23",
+      "created": "2025-05-23",
+      "keywords": [
+        "Beteiligung",
+        "Eigenkapital",
+        "Wachstumsfinanzierung",
+        "Nachfolgelösung",
+        "Investition",
+        "KMU",
+        "Sachsen"
+      ],
+      "förderart": ["Beteiligung"],
+      "höhe_der_förderung": "1.000.000 € bis 8.000.000 €",
+      "laufzeit": "5 bis 8 Jahre"
+    }
+  ],
+
+  "Erneuerbare Energien": [
+        {
+      "title": "Erneuerbare Energien Brandenburg",
+      "description": "Das Förderprogramm unterstützt den Ausbau erneuerbarer Energien in Brandenburg. Gefördert werden Investitionen in Floating-Photovoltaikanlagen, Agri-Photovoltaikanlagen, Tiefengeothermieanlagen und fischfreundliche Wasserkraftanlagen. Ziel ist es, eine sichere Energieversorgung zu gewährleisten und CO₂-Einsparungen zu erzielen.",
+      "eligible_applicants": [
+        "Kleine und mittlere Unternehmen (KMU) der gewerblichen Wirtschaft",
+        "Stadtwerke und Energieversorger gemäß Energiewirtschaftsgesetz (EnWG)"
+      ],
+      "funding_area": "Brandenburg",
+      "call_id": "EE-BB-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-24",
+      "created": "2025-05-24",
+      "keywords": [
+        "Erneuerbare Energien",
+        "Photovoltaik",
+        "Geothermie",
+        "Wasserkraft",
+        "Brandenburg",
+        "ILB",
+        "MWAEK"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 60 % der förderfähigen Ausgaben",
+      "laufzeit": "Projektabhängig"
+    },
+        {
+      "title": "Bundesförderung für Energie- und Ressourceneffizienz in der Wirtschaft (Zuschuss) – Modul 2: Prozesswärme aus erneuerbaren Energien",
+      "description": "Das Förderprogramm unterstützt Unternehmen bei Investitionen in die Bereitstellung von Prozesswärme aus erneuerbaren Energien. Gefördert werden beispielsweise Solarkollektoranlagen, Biomasseanlagen und Wärmepumpen, die zur Erzeugung von Prozesswärme eingesetzt werden. Ziel ist die Steigerung der Energieeffizienz und die Reduzierung von Treibhausgasemissionen in der Wirtschaft.",
+      "eligible_applicants": [
+        "Unternehmen mit Sitz in Deutschland, unabhängig von Größe und Branche"
+      ],
+      "funding_area": "Bund",
+      "call_id": "EEW-Modul2-2025",
+      "submission_deadline": "2028-12-31",
+      "last_modified": "2025-05-24",
+      "created": "2025-05-24",
+      "keywords": [
+        "Prozesswärme",
+        "Erneuerbare Energien",
+        "Energieeffizienz",
+        "BMWK",
+        "BAFA",
+        "Solarkollektoren",
+        "Biomasse",
+        "Wärmepumpen"
+      ],
+      "förderart": ["Zuschuss", "Tilgungszuschuss in Verbindung mit zinsverbilligten KfW-Krediten"],
+      "höhe_der_förderung": "Bis zu 55 % der förderfähigen Investitionskosten",
+      "laufzeit": "Projektabhängig"
+    }
+  ],
+
+  "Anlagenbau": [
+    {
+      "title": "KMU-innovativ: Produktionsforschung",
+      "description": "Das Förderprogramm unterstützt kleine und mittlere Unternehmen (KMU) sowie mittelständische Unternehmen bei risikoreichen vorwettbewerblichen Forschungs- und Entwicklungsprojekten im Bereich der Produktionsforschung. Ziel ist es, die Innovationskraft und Wettbewerbsfähigkeit der Unternehmen zu stärken.",
+      "eligible_applicants": [
+        "Kleine und mittlere Unternehmen (KMU)",
+        "Mittelständische Unternehmen",
+        "Forschungseinrichtungen in Kooperation mit Unternehmen"
+      ],
+      "funding_area": "Bund",
+      "call_id": "KMU-I-Prod-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-24",
+      "created": "2025-05-24",
+      "keywords": [
+        "Produktionsforschung",
+        "Forschung und Entwicklung",
+        "KMU",
+        "Innovationsförderung",
+        "BMBF"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Bis zu 70 % der förderfähigen Kosten für KMU; bis zu 60 % für mittelständische Unternehmen; bis zu 100 % für Forschungseinrichtungen",
+      "laufzeit": "In der Regel 2 Jahre; bei ESF-Plus-kofinanzierten Projekten bis zu 3 Jahre"
+    },
+    {
+      "title": "Wachstumsfonds Mittelstand Sachsen",
+      "description": "Der Wachstumsfonds Mittelstand Sachsen unterstützt wachstumsorientierte kleine und mittlere Unternehmen (KMU) in Sachsen durch die Bereitstellung von Eigenkapital oder eigenkapitalähnlichen Mitteln. Gefördert werden Vorhaben wie Unternehmensnachfolgen, Gesellschafterveränderungen, organisches Wachstum, strategischer Unternehmensausbau sowie Expansionen.",
+      "eligible_applicants": [
+        "Wachstumsorientierte kleine und mittlere Unternehmen (KMU) mit Sitz oder Betriebsstätte in Sachsen"
+      ],
+      "funding_area": "Sachsen",
+      "call_id": "WMS-SN-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-24",
+      "created": "2025-05-24",
+      "keywords": [
+        "Wachstumsfonds",
+        "Eigenkapital",
+        "Beteiligung",
+        "KMU",
+        "Sachsen",
+        "Unternehmensfinanzierung"
+      ],
+      "förderart": ["Beteiligung"],
+      "höhe_der_förderung": "In der Regel zwischen 1 Mio. EUR und 8 Mio. EUR",
+      "laufzeit": "In der Regel 5 bis 8 Jahre"
+    }
+  
+  ],
+
+  "Maschinenfinanzierung": [
+   {
+      "title": "EULLE – Agrarinvestitionsförderungsprogramm (AFP)",
+      "description": "Das Agrarinvestitionsförderungsprogramm (AFP) unterstützt landwirtschaftliche Betriebe in Rheinland-Pfalz bei Investitionen in besonders tiergerechte Haltungssysteme, umwelt- und klimaschonende Bewirtschaftung sowie die Verbesserung der Wettbewerbsfähigkeit. Gefördert werden unter anderem bauliche Maßnahmen, Maschinen und technische Einrichtungen.",
+      "eligible_applicants": [
+        "Landwirtschaftliche Betriebe mit Sitz in Rheinland-Pfalz"
+      ],
+      "funding_area": "Rheinland-Pfalz",
+      "call_id": "EULLE-AFP-2025",
+      "submission_deadline": "laufend",
+      "last_modified": "2025-05-24",
+      "created": "2025-05-24",
+      "keywords": [
+        "Agrarinvestition",
+        "Tierwohl",
+        "Umweltschutz",
+        "Klimaschutz",
+        "Landwirtschaft",
+        "Rheinland-Pfalz"
+      ],
+      "förderart": ["Zuschuss"],
+      "höhe_der_förderung": "Je nach Vorhaben zwischen 20 % und 40 % der förderfähigen Investitionskosten",
+      "laufzeit": "Projektabhängig"
+    }
+  ]
+}

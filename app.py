@@ -155,14 +155,38 @@ def show_funding_matches(min_score: float = 0.30, k: int = 20):
             st.markdown("❌ Leider passt kein Förderprogramm ausreichend zu Ihrem Profil.")
         else:
             st.markdown(f"🔍 **Programme mit Score ≤ {min_score:.2f}:**")
+
+            # 💡 Erklärung zum Score hinzufügen
+            st.markdown("""
+            <div style="padding: 1rem; background-color: #f0f2f6; border-left: 5px solid #4a90e2; border-radius: 8px;">
+            <h4 style="margin-top: 0;">🧠 Was bedeutet der Score?</h4>
+            <p style="margin-bottom: 0.5rem;">
+                Der <strong>Score-Wert</strong> zeigt, wie gut ein Förderprogramm zu Ihrem Projekt passt.
+            </p>
+            <ul style="margin-top: 0;">
+                <li>🔵 <strong>Score &lt; 0.25</strong>: Sehr gute Übereinstimmung</li>
+                <li>🟢 <strong>Score 0.30 – 0.30</strong>: Gute Relevanz</li>
+                <li>⚪ <strong>Score &gt; 0.35</strong>: Geringe Passgenauigkeit</li>
+            </ul>
+            <p style="margin-top: 0.5rem;">
+                <em>Je niedriger der Score, desto besser passt das Förderprogramm zu Ihrem Vorhaben.</em>
+            </p>
+            </div>
+            """, unsafe_allow_html=True)
             for p in programmes:
-                st.markdown(
-                    f"**{p['title']}**  \n"
-                    f"*Kategorie*: {p['category']}  \n"
-                    f"*Score*: {p['score']:.3f} • *Call-ID*: {p['call_id']}  \n"
-                    f"*Frist*: {p['submission_deadline']}  \n"
-                    f"{p['description']}"
-                )
+                st.markdown(f"""
+            **{p['title']}**
+
+            {p['description']}
+
+            - 🗂️ **Kategorie**: {p.get('category', '–')}
+            - 🌍 **Fördergebiet**: {p.get('funding_area', '–')}
+            - 🆔 **Call-ID**: {p.get('call_id', '–')}
+            - ⏳ **Frist**: {p.get('submission_deadline', '–')}
+            - 💶 **Förderart**: {', '.join(p.get('förderart', [])) if p.get('förderart') else '–'}
+            - 📊 **Förderhöhe**: {p.get('höhe_der_förderung', '–')}
+            - 🧮 **Score**: {p['score']:.3f}
+            """)
 
     st.session_state.matches_shown = True
 
@@ -217,4 +241,4 @@ if txt := st.chat_input("💬 Assistent fragen…"):
 
 # ─── SHOW PROGRAMME MATCHES (once) ──────────────────────────────
 if st.session_state.tree_complete:
-    show_funding_matches(min_score=0.45, k=20)
+    show_funding_matches(min_score=0.35, k=20)

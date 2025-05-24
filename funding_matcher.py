@@ -1,4 +1,5 @@
 # funding_matcher.py
+
 import json, os
 from pathlib import Path
 from typing import List, Dict, Tuple
@@ -7,13 +8,12 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
-_DATA_FILE = Path("foerdermittel_samples.json")
+_DATA_FILE = Path("foerdermittel_sample.json")
 _INDEX_DIR = "funding_index"
 
-
-# ──────────────────────────
+# ──────────────────────────────
 # Load dataset as list[dict]
-# ──────────────────────────
+# ──────────────────────────────
 def _load_dataset() -> List[Dict]:
     with _DATA_FILE.open(encoding="utf-8") as f:
         raw = json.load(f)
@@ -23,10 +23,9 @@ def _load_dataset() -> List[Dict]:
             items.append({**prog, "category": cat})
     return items
 
-
-# ──────────────────────────
-# Build / load FAISS index
-# ──────────────────────────
+# ──────────────────────────────
+# Build or load FAISS index
+# ──────────────────────────────
 def build_or_load_index() -> FAISS:
     emb = OpenAIEmbeddings()
     if os.path.isdir(_INDEX_DIR):
@@ -34,44 +33,71 @@ def build_or_load_index() -> FAISS:
 
     docs: List[Document] = []
     for p in _load_dataset():
-        text = f"{p['title']}\n{p['description']}\n{' '.join(p.get('keywords', []))}"
+        text = (
+            f"Titel: {p['title']}\n"
+            f"Beschreibung: {p['description']}\n"
+            f"Zielgruppe: {', '.join(p.get('eligible_applicants', []))}\n"
+            f"Fördergebiet: {p.get('funding_area', '')}\n"
+            f"Schlagworte: {', '.join(p.get('keywords', []))}\n"
+            f"Förderart: {', '.join(p.get('förderart', []))}\n"
+            f"Höhe der Förderung: {p.get('höhe_der_förderung', '')}"
+        )
         docs.append(Document(page_content=text, metadata=p))
 
     index = FAISS.from_documents(docs, emb)
     index.save_local(_INDEX_DIR)
     return index
 
-
-# ──────────────────────────
-# API 1  – keep old "top-n"
-# ──────────────────────────
+# ──────────────────────────────
+# Return top-n matches (lowest scores)
+# ──────────────────────────────
 def top_n_matches(user_profile: str, n: int = 3) -> List[Dict]:
-    """
-    Return the n most similar programmes (lower score = better).
-    """
     index = build_or_load_index()
     hits: List[Tuple[Document, float]] = index.similarity_search_with_score(user_profile, k=n)
-    return [doc.metadata | {"score": score} for doc, score in hits]
 
+    result_fields = [
+        "title",
+        "description",
+        "funding_area",
+        "call_id",
+        "submission_deadline",
+        "förderart",
+        "höhe_der_förderung",
+        "category"
+    ]
 
-# ──────────────────────────
-# API 2  – score threshold
-# ──────────────────────────
+    return [
+        {key: doc.metadata.get(key) for key in result_fields} | {"score": score}
+        for doc, score in hits
+    ]
+
+# ──────────────────────────────
+# Return matches below a score threshold
+# ──────────────────────────────
 def matches_above_threshold(
     user_profile: str,
     min_score: float = 0.30,
     k: int = 20
 ) -> List[Dict]:
-    """
-    Return ALL programmes whose similarity score ≤ min_score.
-    • min_score ≈ 0.25–0.30 for strict matches, 0.35+ for looser.
-    • k = how many nearest neighbours to fetch before filtering.
-    """
     index = build_or_load_index()
     hits: List[Tuple[Document, float]] = index.similarity_search_with_score(user_profile, k=k)
-    qualified = [
-        doc.metadata | {"score": score}
-        for doc, score in hits
-        if score <= min_score
+
+    result_fields = [
+        "title",
+        "description",
+        "funding_area",
+        "call_id",
+        "submission_deadline",
+        "förderart",
+        "höhe_der_förderung",
+         "category"
     ]
+
+    qualified = []
+    for doc, score in hits:
+        if score <= min_score:
+            filtered = {key: doc.metadata.get(key) for key in result_fields}
+            filtered["score"] = score
+            qualified.append(filtered)
+
     return qualified
