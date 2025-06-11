@@ -13,9 +13,15 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain_core.prompts import ChatPromptTemplate
 
-# NEW → helper for funding-programme matching
-from funding_matcher import build_or_load_index, matches_above_threshold
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+import html
 
+
+# NEW → helper for funding-programme matching
+from matcher_base     import get_index           # nur um Index einmal zu bauen
+from matcher_location  import adjusted_matches    # Location-aware Matching
 
 # ─── ENV & CONFIG ───────────────────────────────────────────────
 load_dotenv()
@@ -93,16 +99,35 @@ if "conversation_chain" not in st.session_state:
 
 # ─── FUNDING-PROGRAMME INDEX (built once) ───────────────────────
 if "programme_index" not in st.session_state:
-    st.session_state.programme_index = build_or_load_index()
+    st.session_state.programme_index = get_index()
 
 # ─── SAVE USER ANSWERS ──────────────────────────────────────────
+# ─── SAVE USER ANSWERS (Google Sheets) ──────────────────────────
 def save_user_answers():
-    os.makedirs("user_data", exist_ok=True)
-    with open(f"user_data/user_{st.session_state.user_id}.json", "w",
-              encoding="utf-8") as f:
-        json.dump({"user_id": st.session_state.user_id,
-                   "answers":  st.session_state.tree_answers},
-                  f, indent=2, ensure_ascii=False)
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=scope
+    )
+    client = gspread.authorize(creds)
+
+    sh = client.open_by_key(st.secrets["sheets"]["answers_sheet_id"])
+    ws_name = st.secrets["sheets"].get("worksheet_name")
+    ws = sh.worksheet(ws_name) if ws_name else sh.sheet1  # 1ʳᵉ feuille sinon
+
+    row = {
+        "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "user_id":   st.session_state.user_id,
+        **st.session_state.tree_answers,
+    }
+
+    # ligne d’en-tête si la feuille est vide
+    if ws.row_count == 0 or ws.acell("A1").value == "":
+        ws.append_row(list(row.keys()))
+
+    ws.append_row(list(row.values()))
 
 # ─── ADVANCE TREE ───────────────────────────────────────────────
 def advance_tree(next_node: str, user_reply: str):
@@ -127,45 +152,107 @@ def advance_tree(next_node: str, user_reply: str):
         st.session_state.last_tree_msg = nxt_q
 
     st.session_state.tree_complete = (next_node == "chat")
-    save_user_answers()
-
+    if st.session_state.tree_complete:
+        save_user_answers()
 # ─── HANDLE FREE CHAT ───────────────────────────────────────────
 def handle_free_chat(txt: str):
     st.session_state.chat_history.append(HumanMessage(content=txt))
     ans = st.session_state.conversation_chain({"question": txt})["answer"]
     st.session_state.chat_history.append(AIMessage(content=ans))
 
-# ─── SHOW MATCHES ONCE WHEN TREE DONE ───────────────────────────
-def show_funding_matches(min_score: float = 0.30, k: int = 20):
-    """
-    Display all programmes with similarity score ≤ min_score.
-    """
-    if st.session_state.matches_shown or st.session_state.programme_index is None:
+
+import html
+# ---------- Lead-Speicher --------------------------------------------------
+def _save_lead(name: str, phone: str, mail: str, programme: str) -> None:
+    # 1) Google-Auth
+    creds  = Credentials.from_service_account_info(
+                st.secrets["gcp_service_account"],
+                scopes=["https://www.googleapis.com/auth/spreadsheets",
+                        "https://www.googleapis.com/auth/drive"])
+    client = gspread.authorize(creds)
+
+    # 2) Spreadsheet öffnen
+    sh = client.open_by_key(st.secrets["sheets"]["answers_sheet_id"])
+
+    # 3) Arbeitsblatt »Réponses 2« holen – falls es nicht existiert, anlegen
+    try:
+        ws = sh.worksheet("Réponses 2")
+    except gspread.WorksheetNotFound:
+        ws = sh.add_worksheet(title="Réponses 2", rows="1000", cols="20")
+
+    # 4) Header in der ersten Zeile nur einmal schreiben
+    if ws.acell("A1").value == "":
+        ws.append_row(
+            ["timestamp", "user_id", "programme", "name", "phone", "mail"],
+            value_input_option="RAW")
+
+    # 5) Lead-Zeile anhängen
+    ws.append_row(
+        [
+            datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            st.session_state.user_id,
+            programme,
+            name,
+            phone,
+            mail,
+        ],
+        value_input_option="RAW",
+    )
+
+# ---------- Hauptfunktion --------------------------------------------------
+def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
+    if "matched_programmes" not in st.session_state:
+        profile  = "\n".join(f"{k}: {v}" for k, v in st.session_state.tree_answers.items())
+        user_loc = st.session_state.tree_answers.get("location", "")
+        st.session_state.matched_programmes = adjusted_matches(
+            profile, user_location=user_loc, base_k=base_k, max_score=min_score
+        )
+
+    programmes = st.session_state.matched_programmes
+    if not programmes:
+        st.chat_message("ai").markdown("❌ Leider passt kein Förderprogramm ausreichend zu Ihrem Profil.")
         return
 
-    profile = "\n".join(f"{k}: {v}"
-                        for k, v in st.session_state.tree_answers.items())
-
-    programmes = matches_above_threshold(profile,
-                                         min_score=min_score,
-                                         k=k)
-
     with st.chat_message("ai"):
-        if not programmes:
-            st.markdown("❌ Leider passt kein Förderprogramm ausreichend zu Ihrem Profil.")
-        else:
-            st.markdown(f"🔍 **Programme mit Score ≤ {min_score:.2f}:**")
-            for p in programmes:
-                st.markdown(
-                    f"**{p['title']}**  \n"
-                    f"*Kategorie*: {p['category']}  \n"
-                    f"*Score*: {p['score']:.3f} • *Call-ID*: {p['call_id']}  \n"
-                    f"*Frist*: {p['submission_deadline']}  \n"
-                    f"{p['description']}"
+        st.markdown(
+            f"<h3 style='text-align:center;margin:2rem 0 1rem;'>"
+            f"Gefundene Förderprogramme&nbsp;(Score ≤ {min_score:.2f})</h3>",
+            unsafe_allow_html=True)
+
+        for idx, p in enumerate(programmes):
+            with st.container(border=True):
+                # --------- Textbereich --------------------------------------------------
+                st.markdown(f"### {p['title']}", unsafe_allow_html=True)
+                st.write(p["description"])
+                meta = (
+                    f"📍 **Gebiet:** {p['funding_area']} &nbsp;&nbsp; "
+                    f"💶 **Art:** {', '.join(p['förderart'])} &nbsp;&nbsp; "
+                    f"💰 **Höhe:** {p['höhe_der_förderung'] or '–'} &nbsp;&nbsp; "
+                    f"📊 **Score:** {p['score']:.3f}"
                 )
+                st.markdown(meta)
 
-    st.session_state.matches_shown = True
+                # --------- Button  ------------------------------------------------------
+                btn_key = f"lead_btn_{idx}"
+                if st.button("Interesse / Rückruf", key=btn_key):
+                    st.session_state.lead_programme = p
+                    st.session_state.show_lead = True
 
+    # ---------- Pop-up / Formular ------------------------------------------
+    if st.session_state.get("show_lead", False):
+        prog = st.session_state["lead_programme"]
+        container = st.modal(f"Kontakt für: {prog['title']}") if hasattr(st, "modal") else st.container()
+
+        with container:
+            with st.form("lead_form", clear_on_submit=True):
+                name  = st.text_input("Name")
+                phone = st.text_input("Telefon")
+                mail  = st.text_input("E-Mail")
+                if st.form_submit_button("Absenden"):
+                    _save_lead(name, phone, mail, prog["title"])
+                    st.success("Vielen Dank – wir melden uns!")
+                    st.session_state.show_lead = False
+                    
 # ─── RENDER CHAT & INPUTS ───────────────────────────────────────
 current = TREE[st.session_state.tree_node]
 need_input = not st.session_state.tree_complete
@@ -184,7 +271,7 @@ for m in st.session_state.chat_history:
             keys = list(current["optionen"].keys())
 
             # text-input node
-            if keys in (["Continue"], ["Submit"]):
+            if keys in (["Weiter"], ["Absenden"]):
                 reply = st.text_input(
                     "✏️ Antwort eingeben",
                     value="",
@@ -211,10 +298,10 @@ for m in st.session_state.chat_history:
                            current["button_link"])
 
 # ─── ALWAYS-ON FREE CHAT ────────────────────────────────────────
-if txt := st.chat_input("💬 Assistent fragen…"):
-    handle_free_chat(txt)
-    st.rerun()
+#if txt := st.chat_input("💬 Assistent fragen…"):
+  #  handle_free_chat(txt)
+  #  st.rerun()
 
 # ─── SHOW PROGRAMME MATCHES (once) ──────────────────────────────
 if st.session_state.tree_complete:
-    show_funding_matches(min_score=0.45, k=20)
+    show_funding_matches(min_score=0.35, base_k=20)

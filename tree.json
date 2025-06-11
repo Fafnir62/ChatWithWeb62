@@ -1,66 +1,82 @@
 {
   "start": {
-    "frage": "👋 Hello! I’m your Funding Assistant. What would you like to do?",
+    "frage": "👋 Hallo! Ich bin Ihr Fördermittel-Assistent. Wobei kann ich Ihnen helfen?",
     "optionen": {
-      "🔍 Search for funding for a specific project": "purpose",
-      "💡 Explore general funding opportunities": "inspire"
+      "🔍 Nach Fördermitteln für ein konkretes Vorhaben suchen": "purpose",
+      "💡 Mich inspirieren lassen, welche Fördermittel es generell gibt": "inspire"
     }
   },
+
   "purpose": {
-    "frage": "Great! Let’s gather some information to match you with suitable funding programs.",
+    "frage": "Super! Damit ich passende Programme finden kann, brauche ich ein paar Informationen.",
     "optionen": {
-      "🔬 Research & Development": "location",
-      "🏠 Renovation / Energy Efficiency": "location",
-      "🚀 Start-up / Business Expansion": "location",
-      "🌱 Renewable Energy": "location",
-      "🏭 Plant Construction": "location",
-      "⚙️ Machinery Financing": "location"
+      "🔬 Forschung & Entwicklung": "retrospective_costs",
+      "🏠 Sanierung (insbesondere Energiesanierung)": "retrospective_costs",
+      "🚀 Existenzgründung & Festigung": "retrospective_costs",
+      "🌱 Erneuerbare Energien": "retrospective_costs",
+      "🏭 Anlagenbau": "retrospective_costs",
+      "⚙️ Maschinenfinanzierung": "retrospective_costs"
     }
   },
+
+  "retrospective_costs": {
+    "frage": "📅 Hatten Sie seit 2020 bereits Kosten für Forschung und Entwicklung? Wenn ja, wie hoch waren diese?",
+    "optionen": {
+      "Weiter": "location"
+    }
+  },
+
   "location": {
-    "frage": "📍 Where is your company based? (City, Region, Country)",
+    "frage": "📍 Wo befindet sich Ihr Unternehmen? (Stadt, Region, Land)",
     "optionen": {
-      "Continue": "industry"
+      "Weiter": "industry"
     }
   },
+
   "industry": {
-    "frage": "🏢 What industry is your business in?",
+    "frage": "🏢 In welcher Branche sind Sie tätig?",
     "optionen": {
-      "Continue": "products"
+      "Weiter": "products"
     }
   },
+
   "products": {
-    "frage": "🔧 What products or services do you offer?",
+    "frage": "🔧 Welche Produkte oder Dienstleistungen bietet Ihr Unternehmen an?",
     "optionen": {
-      "Continue": "project"
+      "Weiter": "project"
     }
   },
+
   "project": {
-    "frage": "📝 Can you describe your project in a few sentences?",
+    "frage": "📝 Bitte beschreiben Sie in einigen Sätzen das Projekt, für das Sie eine Förderung beantragen möchten.",
     "optionen": {
-      "Continue": "cost"
+      "Weiter": "cost"
     }
   },
+
   "cost": {
-    "frage": "💰 What’s your estimated total project cost?",
+    "frage": "💰 Wie hoch sind die Projektkosten (geschätzt in EUR)?",
     "optionen": {
-      "Continue": "own_funds"
+      "Weiter": "own_funds"
     }
   },
+
   "own_funds": {
-    "frage": "💸 How much of that can you cover with your own funds?",
+    "frage": "💸 Wie viel Eigenanteil davon können Sie aufbringen (in EUR)?",
     "optionen": {
-      "Submit": "chat"
+      "Absenden": "chat"
     }
   },
+
   "chat": {
-    "antwort": "✅ Thank you! Based on your answers, I’ll now check the best funding programs for you.",
-    "button_label": "Go to chat",
+    "antwort": "✅ Danke! Anhand Ihrer Angaben suche ich jetzt nach passenden Förderprogrammen.",
+    "button_label": "Zum Chat",
     "button_link": "/"
   },
+
   "inspire": {
-    "antwort": "🧠 You can explore various types of funding programs by browsing our knowledge base.",
-    "button_label": "Open Funding Guide",
+    "antwort": "🧠 Entdecken Sie verschiedene Förderprogramme in unserer Wissensbasis.",
+    "button_label": "Fördermittel-Leitfaden öffnen",
     "button_link": "https://www.foerderdatenbank.de/"
   }
 }
