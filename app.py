@@ -139,6 +139,7 @@ def advance_tree(next_node: str, user_reply: str):
     cur = st.session_state.tree_node
     st.session_state.pop(f"input_{cur}", None)
 
+    # Clean up chat history up to the current question
     cur_q = TREE[cur].get("frage") or TREE[cur].get("antwort") or ""
     kept = []
     for m in st.session_state.chat_history:
@@ -147,18 +148,22 @@ def advance_tree(next_node: str, user_reply: str):
             break
     st.session_state.chat_history = kept
 
+    # Store the user's reply
     st.session_state.chat_history.append(HumanMessage(content=user_reply))
     st.session_state.tree_answers[cur] = user_reply
     st.session_state.tree_node = next_node
 
+    # Add the next question or answer to the chat
     nxt_q = TREE[next_node].get("frage") or TREE[next_node].get("antwort")
     if nxt_q and nxt_q != st.session_state.last_tree_msg:
         st.session_state.chat_history.append(AIMessage(content=nxt_q))
         st.session_state.last_tree_msg = nxt_q
 
-    st.session_state.tree_complete = (next_node == "chat")
-    if st.session_state.tree_complete:
+    # Check if this was the final step
+    if next_node == "chat":
+        st.session_state.tree_complete = True
         save_user_answers()
+
 # ─── HANDLE FREE CHAT ───────────────────────────────────────────
 def handle_free_chat(txt: str):
     st.session_state.chat_history.append(HumanMessage(content=txt))
