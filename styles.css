@@ -1,0 +1,121 @@
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap');
+
+/* Apply DM Sans everywhere */
+html, body, div, p, h1, h2, h3, h4, h5, h6, input, button, textarea {
+    font-family: 'DM Sans', sans-serif;
+}
+
+
+.button-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin: 0px 0;
+}
+
+.button-wrap > div {
+    flex: 1 1 200px;
+    max-width: 250px;
+}
+
+[data-testid="stChatMessageAvatarUser"] {
+    background-color: #000000 !important;
+}
+
+
+[data-testid="stChatMessageAvatarAssistant"] {
+    background-color: #ff006e !important;
+}
+
+
+.intro-box {
+    font-size: 17px;
+    line-height: 1.8;
+    font-weight: 400;
+}
+
+.button-option {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  margin: 0.25rem 0;
+  border: 2px solid #ff006e;
+  border-radius: 8px;
+  background-color: transparent;
+  color: #ff006e;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.button-option:hover {
+  background-color: #ffe0ef;
+}
+
+.button-option-selected {
+  background-color: #ff006e;
+  color: white;
+  border-color: #ff006e;
+}
+
+/* Style the text input to match chat bubbles alignment and background */
+
+/* Make the chat input wide and consistent */
+.stTextInput > div > input {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+/* Remove container side margins around input */
+.css-1kyxreq {  /* You may need to inspect the actual class Streamlit gives the input container */
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.st-bo {
+    background-color: rgba(240, 242, 246, 0.5) !important;
+}
+
+div.st-bo {
+    background-color: rgba(240, 242, 246, 0.5) !important;
+}
+
+.stTextInput input {
+    background-color: rgba(240, 242, 246, 0.5) !important;
+}
+
+/* Label über Textfeld ausblenden (verursacht den Abstand) */
+.stTextInput label {
+    display: none !important;
+}
+
+/* Padding und Margin des Wrappers reduzieren */
+.stTextInput {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Ändert das gelbe Warning-Highlight 
+.stAlert {
+    background-color: rgba(255, 0, 110, 0.15);
+    border-color: hsl(334, 100%, 83%);
+}
+
+Optional: Ändert den Icon-Container 
+.stAlert > div:first-child {
+    background-color: hsl(334, 100%, 83%);
+}
+
+ Customize the text inside the warning 
+.stAlert p {
+  color: #ff006e;
+  font-weight: 500;
+}
+
+*/

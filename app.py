@@ -29,6 +29,11 @@ st.set_page_config(page_title="Fördermittel-Chat",
                    page_icon="🤖",
                    layout="wide")
 
+with open("styles.css", encoding="utf-8") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+
 # ─── SESSION STATE ──────────────────────────────────────────────
 st.session_state.setdefault("tree_node", "start")
 st.session_state.setdefault("chat_history", [])
@@ -163,12 +168,23 @@ def handle_free_chat(txt: str):
 
 import html
 # ---------- Lead-Speicher --------------------------------------------------
-def _save_lead(name: str, phone: str, mail: str, programme: str) -> None:
+def _save_lead(
+    unternehmen: str,
+    name: str,
+    phone: str,
+    mail: str,
+    programme: str,
+    newsletter_optin: bool,
+    datenschutz_optin: bool
+) -> None:
     # 1) Google-Auth
-    creds  = Credentials.from_service_account_info(
-                st.secrets["gcp_service_account"],
-                scopes=["https://www.googleapis.com/auth/spreadsheets",
-                        "https://www.googleapis.com/auth/drive"])
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=[
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+    )
     client = gspread.authorize(creds)
 
     # 2) Spreadsheet öffnen
@@ -183,8 +199,13 @@ def _save_lead(name: str, phone: str, mail: str, programme: str) -> None:
     # 4) Header in der ersten Zeile nur einmal schreiben
     if ws.acell("A1").value == "":
         ws.append_row(
-            ["timestamp", "user_id", "programme", "name", "phone", "mail"],
-            value_input_option="RAW")
+            [
+                "timestamp", "user_id", "programme", 
+                "unternehmen", "name", "phone", "mail", 
+                "newsletter_optin", "datenschutz_optin"
+            ],
+            value_input_option="RAW"
+        )
 
     # 5) Lead-Zeile anhängen
     ws.append_row(
@@ -192,11 +213,14 @@ def _save_lead(name: str, phone: str, mail: str, programme: str) -> None:
             datetime.utcnow().isoformat(timespec="seconds") + "Z",
             st.session_state.user_id,
             programme,
+            unternehmen,
             name,
             phone,
             mail,
+            "Ja" if newsletter_optin else "Nein",
+            "Ja" if datenschutz_optin else "Nein",
         ],
-        value_input_option="RAW",
+        value_input_option="RAW"
     )
 
 # ---------- Hauptfunktion --------------------------------------------------
@@ -213,15 +237,71 @@ def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
         st.chat_message("ai").markdown("❌ Leider passt kein Förderprogramm ausreichend zu Ihrem Profil.")
         return
 
-    with st.chat_message("ai"):
-        st.markdown(
-            f"<h3 style='text-align:center;margin:2rem 0 1rem;'>"
-            f"Gefundene Förderprogramme&nbsp;(Score ≤ {min_score:.2f})</h3>",
+    st.markdown(
+            f"""
+            <p style='text-align:center; margin:1.5rem 0; font-size:1.1rem; line-height:1.4;'>
+            🚀 Herzlichen Glückwunsch! Aufgrund Ihrer Angaben scheint es Fördermöglichkeiten für Ihr Projekt zu geben. Diese Förderprogramme hat der KI-Agent als besonders passend bewertet.
+            </p>
+            """,
             unsafe_allow_html=True)
 
-        for idx, p in enumerate(programmes):
-            with st.container(border=True):
-                # --------- Textbereich --------------------------------------------------
+    for idx, p in enumerate(programmes):
+        with st.container(border=True):
+            if idx < 2:
+                # Blurred + Upgrade-Teaser mit Anfrage-Link
+                st.markdown(
+                    f"""
+                    <div style='
+                        filter: blur(0px);
+                        pointer-events: none;
+                        user-select: none;
+                        color: gray;
+                        border: 1px solid #ddd;
+                        padding: 1rem;
+                        border-radius: 8px;
+                        background-color: #f9f9f9;
+                    '>
+                        <h4>{p['title']}</h4>
+                        <p>{p['description']}</p>
+                        <p>
+                            📍 <strong>Gebiet:</strong> {p['funding_area']} &nbsp;&nbsp;
+                            💶 <strong>Art:</strong> {', '.join(p['förderart'])} &nbsp;&nbsp;
+                            💰 <strong>Höhe:</strong> {p['höhe_der_förderung'] or '–'} &nbsp;&nbsp;
+                            📊 <strong>Score:</strong> {p['score']:.3f}
+                        </p>
+                    </div>
+                    <div style='
+                        margin-top: 0.5rem;
+                        background: #000000;
+                        padding: 1rem;
+                        color: white;
+                        font-weight: normal;
+                        text-align: center;
+                        border-radius: 8px;
+                        border: 1px solid #000000;
+                        font-family: 'DM Sans', sans-serif;
+                    '>
+                        <div style='margin-bottom:0.5rem;'>
+                            🔓 Gerne senden wir Ihnen die geeignetsten Fördermittel per E-Mail.
+                            <br>
+                            Wir melden uns innerhalb von 24 Stunden mit konkreten Fördermöglichkeiten.
+                        </div>
+                        <a href="#kontaktformular" style='
+                            display:inline-block;
+                            background-color: #ff006e;
+                            color: white;
+                            text-decoration: none;
+                            padding: 0.5rem 1rem;
+                            border-radius: 5px;
+                            font-weight: bold;
+                            font-family: 'DM Sans', sans-serif;
+                        '>Jetzt anfragen</a>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            else:
+                # Normale Anzeige
                 st.markdown(f"### {p['title']}", unsafe_allow_html=True)
                 st.write(p["description"])
                 meta = (
@@ -232,28 +312,112 @@ def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
                 )
                 st.markdown(meta)
 
-                # --------- Button  ------------------------------------------------------
-                btn_key = f"lead_btn_{idx}"
-                if st.button("Interesse / Rückruf", key=btn_key):
-                    st.session_state.lead_programme = p
-                    st.session_state.show_lead = True
+                # Statt Button – Link mit Anker
+                st.markdown(
+                    f"""
+                    <a href="#kontaktformular" style='
+                        display:inline-block;
+                        margin-top:0.5rem;
+                        background-color: #ff006e;
+                        color: white;
+                        text-decoration: none;
+                        padding: 0.5rem 1rem;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    '>Interesse / Rückruf</a>
+                    """,
+                    unsafe_allow_html=True
+                )  
 
-    # ---------- Pop-up / Formular ------------------------------------------
-    if st.session_state.get("show_lead", False):
-        prog = st.session_state["lead_programme"]
-        container = st.modal(f"Kontakt für: {prog['title']}") if hasattr(st, "modal") else st.container()
+# ---------- Kontaktformular immer sichtbar --------------------------------
+    # Anker für Sprung-Links
+    st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
 
-        with container:
-            with st.form("lead_form", clear_on_submit=True):
-                name  = st.text_input("Name")
-                phone = st.text_input("Telefon")
-                mail  = st.text_input("E-Mail")
-                if st.form_submit_button("Absenden"):
-                    _save_lead(name, phone, mail, prog["title"])
-                    st.success("Vielen Dank – wir melden uns!")
-                    st.session_state.show_lead = False
+    with st.form("lead_form", clear_on_submit=True):
+        st.markdown("### Kontaktformular")
+
+        st.markdown(
+            "Bitte füllen Sie das folgende Formular aus – wir senden Ihnen die passenden Fördermittelvorschläge per E-Mail."
+        )
+
+        unternehmen = st.text_input(label="", placeholder="Unternehmensname *")
+        name = st.text_input(label="", placeholder="Vorname, Nachname *")
+        email = st.text_input(label="", placeholder="E-Mail-Adresse *")
+        phone = st.text_input(label="", placeholder="Telefonnummer (optional)")
+
+        st.markdown(
+            """
+            Die Welt der Fördermittel ist ständig im Wandel – gerne halten wir Sie in regelmäßigen Abständen auf dem Laufenden.
+            Sie können diese Benachrichtigungen jederzeit abbestellen.
+            """
+        )
+        newsletter_optin = st.checkbox(
+            "Ich stimme zu, andere Benachrichtigungen von Fördermittel-Vergleich.de zu erhalten."
+        )
+
+        st.markdown(
+            """
+            Um Ihnen das Ergebnis Ihres Förderchecks mitzuteilen, müssen wir Ihre personenbezogenen Daten speichern und verarbeiten.
+            """
+        )
+        datenschutz_optin = st.checkbox(
+            "Ich stimme zu, dass meine Angaben zur Kontaktaufnahme und zur Bearbeitung meines Anliegens (z. B. zur Terminvereinbarung) gemäß der [Datenschutzerklärung](https://www.xn--frdermittel-vergleich-hec.de/datenschutz/) verarbeitet werden.*",
+            help="Pflichtfeld"
+        )
+
+        st.markdown(
+            """
+            <small>
+            Diese Einwilligung kann jederzeit (auch direkt im Anschluss) widerrufen werden. Informationen zum Abbestellen sowie unsere Datenschutzpraktiken und unsere Verpflichtung zum Schutz der Privatsphäre finden Sie in unseren Datenschutzbestimmungen.
+            </small>
+            """,
+            unsafe_allow_html=True
+        )
+
+        submitted = st.form_submit_button("Absenden")
+        if submitted:
+            errors = []
+
+            # Pflichtfelder prüfen
+            if not unternehmen.strip():
+                errors.append("Bitte geben Sie den Unternehmensnamen an.")
+            if not name.strip():
+                errors.append("Bitte geben Sie Ihren Namen an.")
+            if not email.strip():
+                errors.append("Bitte geben Sie Ihre E-Mail-Adresse an.")
+            if not datenschutz_optin:
+                errors.append("Sie müssen der Datenschutzerklärung zustimmen.")
+
+            # E-Mail-Format prüfen
+            import re
+            email_regex = r"[^@]+@[^@]+\.[^@]+"
+            if email and not re.match(email_regex, email):
+                errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+
+            if errors:
+                for e in errors:
+                    st.error(e)
+            else:
+                _save_lead(
+                    unternehmen,
+                    name,
+                    phone,
+                    email,
+                    st.session_state.get("lead_programme", {}).get("title", "Lead aus Formular"),
+                    newsletter_optin,
+                    datenschutz_optin
+                )
+                st.success("Vielen Dank – wir melden uns innerhalb von 24 Stunden mit passenden Fördermöglichkeiten!")
+
                     
 # ─── RENDER CHAT & INPUTS ───────────────────────────────────────
+st.markdown("""
+<div class="intro-box">
+👋 Hallo! Ich bin Ihr kostenfreier KI-Fördermittelberater
+Ich helfe Ihnen in Rekordzeit das passende Fördermittel zu finden und die Förderfähigkeit zu überprüfen. Bitte beantworte die folgenden Fragen möglichst ausführlich, um das beste Ergebnis zu erzielen.
+</div>
+""", unsafe_allow_html=True)
+
 current = TREE[st.session_state.tree_node]
 need_input = not st.session_state.tree_complete
 
@@ -262,40 +426,77 @@ for m in st.session_state.chat_history:
     with st.chat_message(role):
         st.markdown(m.content)
 
-    if (need_input and isinstance(m, AIMessage)
-        and m.content.strip() == (current.get("frage")
-                                  or current.get("antwort", "")).strip()):
-
+    if (
+        need_input
+        and isinstance(m, AIMessage)
+        and m.content.strip() == (current.get("frage") or current.get("antwort", "")).strip()
+    ):
         need_input = False
-        if "optionen" in current:
+
+        # --- 1️⃣ Select Dropdown Node ----------------------
+        if "select" in current:
+            sel_key = f"input_{st.session_state.tree_node}"
+            selection = st.selectbox(
+                "Auswahl treffen",
+                current["select"]["choices"],
+                key=sel_key
+            )
+            if st.button("Absenden", key=f"btn_{st.session_state.tree_node}_select"):
+                if selection.strip():
+                    advance_tree(current["select"]["next"], selection.strip())
+                    st.rerun()
+                else:
+                    st.warning("Bitte eine Auswahl treffen…")
+
+        # --- 2️⃣ Text Input Node with Enter or Button ------
+        elif "optionen" in current:
             keys = list(current["optionen"].keys())
 
-            # text-input node
             if keys in (["Weiter"], ["Absenden"]):
+                inp_key = f"input_{st.session_state.tree_node}"
+                prev_key = f"{inp_key}_prev"
+
+                # Hole aktuellen Wert
+                current_val = st.session_state.get(inp_key, "")
+                prev_val = st.session_state.get(prev_key, "")
+
+                # Textfeld ohne Label
                 reply = st.text_input(
-                    "✏️ Antwort eingeben",
-                    value="",
-                    key=f"input_{st.session_state.tree_node}"
+                    "",
+                    placeholder="Antwort hier eingeben …",
+                    key=inp_key
                 )
-                if st.button("✅ Absenden"):
+
+                # ENTER-Simulation → wenn sich Wert geändert hat
+                if reply.strip() and reply != prev_val:
+                    st.session_state[prev_key] = reply
+                    advance_tree(current["optionen"][keys[0]], reply.strip())
+                    st.rerun()
+
+                # Fallback-Button
+                if st.button("Absenden", key=f"btn_{st.session_state.tree_node}_text"):
                     if reply.strip():
+                        st.session_state[prev_key] = reply
                         advance_tree(current["optionen"][keys[0]], reply.strip())
                         st.rerun()
                     else:
-                        st.warning("Bitte etwas eingeben…")
+                        st.warning("Bitte etwas eingeben …")
 
-            # multiple-choice node
+            # --- 3️⃣ Multiple Choice Buttons ---------------
             else:
-                cols = st.columns(len(current["optionen"]))
-                for i, (lbl, nxt) in enumerate(current["optionen"].items()):
-                    with cols[i]:
-                        if st.button(lbl):
+                st.markdown('<div class="button-wrap">', unsafe_allow_html=True)
+                for lbl, nxt in current["optionen"].items():
+                    with st.container():
+                        if st.button(lbl, use_container_width=True, key=f"btn_{st.session_state.tree_node}_{lbl}"):
                             advance_tree(nxt, lbl)
                             st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        elif "button_label" in current:   # leaf with external link
-            st.link_button(current["button_label"],
-                           current["button_link"])
+        # --- 4️⃣ External Link Leaf -------------------------
+        elif "button_label" in current:
+            st.link_button(current["button_label"], current["button_link"])
+
+
 
 # ─── ALWAYS-ON FREE CHAT ────────────────────────────────────────
 #if txt := st.chat_input("💬 Assistent fragen…"):

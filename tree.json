@@ -1,82 +1,100 @@
 {
   "start": {
-    "frage": "👋 Hallo! Ich bin Ihr Fördermittel-Assistent. Wobei kann ich Ihnen helfen?",
+    "frage": "Damit ich passende Förderprogramme finden kann, sagen Sie mir bitte, welches Thema für Sie am besten passt",
     "optionen": {
-      "🔍 Nach Fördermitteln für ein konkretes Vorhaben suchen": "purpose",
-      "💡 Mich inspirieren lassen, welche Fördermittel es generell gibt": "inspire"
+      "🔬 Forschung & Entwicklung": "taxable_in_germany",
+      "🏠 Sanierung (insbesondere Energiesanierung)": "taxable_in_germany",
+      "🚀 Existenzgründung & Festigung": "taxable_in_germany",
+      "🌱 Erneuerbare Energien": "taxable_in_germany",
+      "🏭 Anlagenbau": "taxable_in_germany",
+      "⚙️ Maschinenfinanzierung": "taxable_in_germany"
     }
   },
 
-  "purpose": {
-    "frage": "Super! Damit ich passende Programme finden kann, brauche ich ein paar Informationen.",
-    "optionen": {
-      "🔬 Forschung & Entwicklung": "retrospective_costs",
-      "🏠 Sanierung (insbesondere Energiesanierung)": "retrospective_costs",
-      "🚀 Existenzgründung & Festigung": "retrospective_costs",
-      "🌱 Erneuerbare Energien": "retrospective_costs",
-      "🏭 Anlagenbau": "retrospective_costs",
-      "⚙️ Maschinenfinanzierung": "retrospective_costs"
-    }
-  },
-
-  "retrospective_costs": {
-    "frage": "📅 Hatten Sie seit 2020 bereits Kosten für Forschung und Entwicklung? Wenn ja, wie hoch waren diese?",
+  "taxable_in_germany": {
+    "frage": "Ist das Unternehmen in Deutschland steuerpflichtig?",
     "optionen": {
       "Weiter": "location"
     }
   },
 
   "location": {
-    "frage": "📍 Wo befindet sich Ihr Unternehmen? (Stadt, Region, Land)",
+    "frage": "In welchem Bundesland ist das Unternehmen ansässig?",
+    "select": {
+      "choices": [
+        "Baden-Württemberg",
+        "Bayern",
+        "Berlin",
+        "Brandenburg",
+        "Bremen",
+        "Hamburg",
+        "Hessen",
+        "Mecklenburg-Vorpommern",
+        "Niedersachsen",
+        "Nordrhein-Westfalen",
+        "Rheinland-Pfalz",
+        "Saarland",
+        "Sachsen",
+        "Sachsen-Anhalt",
+        "Schleswig-Holstein",
+        "Thüringen"
+      ],
+      "next": "company_founded"
+    }
+  },
+
+  "company_founded": {
+    "frage": "Wann wurde das Unternehmen gegründet?",
+    "optionen": {
+      "Weiter": "retrospective_costs"
+    }
+  },
+
+  "retrospective_costs": {
+    "frage": "Hatten Sie seit 2020 bereits Kosten für Forschung und Entwicklung? Wenn ja, wie hoch waren diese?",
     "optionen": {
       "Weiter": "industry"
     }
   },
 
   "industry": {
-    "frage": "🏢 In welcher Branche sind Sie tätig?",
+    "frage": "In welcher Branche sind Sie tätig?",
     "optionen": {
-      "Weiter": "products"
+      "Weiter": "project_description"
     }
   },
 
-  "products": {
-    "frage": "🔧 Welche Produkte oder Dienstleistungen bietet Ihr Unternehmen an?",
+  "project_description": {
+    "frage": "Bitte beschreiben Sie in einigen Sätzen das Projekt, für das Sie eine Förderung beantragen möchten, möglichst genau. Zum Beispiel:\n\n- Was wollen Sie gründen, entwickeln, erforschen, sanieren, oder finanzieren?\n- Welche konkreten Schritte planen Sie?",
     "optionen": {
-      "Weiter": "project"
+      "Weiter": "project_start"
     }
   },
 
-  "project": {
-    "frage": "📝 Bitte beschreiben Sie in einigen Sätzen das Projekt, für das Sie eine Förderung beantragen möchten.",
+  "project_start": {
+    "frage": "Wann ist bzw. war der Beginn des zu fördernden Projekts?",
     "optionen": {
       "Weiter": "cost"
     }
   },
 
   "cost": {
-    "frage": "💰 Wie hoch sind die Projektkosten (geschätzt in EUR)?",
+    "frage": "Wie hoch sind die Projektkosten (geschätzt in EUR)?",
     "optionen": {
       "Weiter": "own_funds"
     }
   },
 
   "own_funds": {
-    "frage": "💸 Wie viel Eigenanteil davon können Sie aufbringen (in EUR)?",
+    "frage": "Wie viel Eigenanteil davon können Sie aufbringen (in EUR)?",
     "optionen": {
       "Absenden": "chat"
     }
   },
 
   "chat": {
-    "antwort": "✅ Danke! Anhand Ihrer Angaben suche ich jetzt nach passenden Förderprogrammen.",
+    "antwort": "✅ Vielen Dank! Anhand Ihrer Angaben suche ich jetzt nach passenden Förderprogrammen.",
     "button_label": "Zum Chat",
     "button_link": "/"
-  },
-
-  "inspire": {
-    "antwort": "🧠 Entdecken Sie verschiedene Förderprogramme in unserer Wissensbasis.",
-    "button_label": "Fördermittel-Leitfaden öffnen",
-    "button_link": "https://www.foerderdatenbank.de/"
   }
 }
