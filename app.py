@@ -160,7 +160,8 @@ def advance_tree(next_node: str, user_reply: str):
         st.session_state.last_tree_msg = nxt_q
 
     # Check if this was the final step
-    if next_node == "chat":
+    if next_node not in TREE or "antwort" in TREE.get(next_node, {}):
+        # Any node with a final answer text = completion
         st.session_state.tree_complete = True
         save_user_answers()
 
