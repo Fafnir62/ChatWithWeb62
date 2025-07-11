@@ -413,8 +413,8 @@ def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
 # ─── RENDER CHAT & INPUTS ───────────────────────────────────────
 st.markdown("""
 <div class="intro-box">
-👋 Hallo! Ich bin Ihr kostenfreier KI-Fördermittelberater
-Ich helfe Ihnen in Rekordzeit das passende Fördermittel zu finden und die Förderfähigkeit zu überprüfen. Bitte beantworte die folgenden Fragen möglichst ausführlich, um das beste Ergebnis zu erzielen.
+👋 Hallo! Ich bin <strong>Ihr kostenfreier KI-Fördermittelberater</strong>.
+Ich helfe Ihnen in Rekordzeit das passende Fördermittel zu finden und die Förderfähigkeit zu überprüfen. Bitte beantworte folgende 10 Fragen möglichst ausführlich, um das beste Ergebnis zu erzielen.
 </div>
 """, unsafe_allow_html=True)
 

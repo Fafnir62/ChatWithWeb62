@@ -2,12 +2,11 @@
   "start": {
     "frage": "Damit ich passende Förderprogramme finden kann, sagen Sie mir bitte, welches Thema für Sie am besten passt",
     "optionen": {
-      "🔬 Forschung & Entwicklung": "taxable_in_germany",
-      "🏠 Sanierung (insbesondere Energiesanierung)": "taxable_in_germany",
-      "🚀 Existenzgründung & Festigung": "taxable_in_germany",
-      "🌱 Erneuerbare Energien": "taxable_in_germany",
-      "🏭 Anlagenbau": "taxable_in_germany",
-      "⚙️ Maschinenfinanzierung": "taxable_in_germany"
+      "Forschung & Entwicklung": "taxable_in_germany",
+      "Gebäude- und Energiesanierung": "taxable_in_germany",
+      "Existenzgründung": "taxable_in_germany",
+      "Maschinenfinanzierung": "taxable_in_germany",
+      "Erneuerbare Energien": "taxable_in_germany"
     }
   },
 
@@ -58,7 +57,7 @@
   },
 
   "industry": {
-    "frage": "In welcher Branche sind Sie tätig?",
+    "frage": "In welcher Branche sind Sie aktiv?",
     "optionen": {
       "Weiter": "project_description"
     }
