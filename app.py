@@ -42,6 +42,8 @@ st.session_state.setdefault("tree_answers", {})
 st.session_state.setdefault("user_id", str(uuid.uuid4()))
 st.session_state.setdefault("last_tree_msg", None)
 st.session_state.setdefault("matches_shown", False)
+st.session_state.setdefault("answers_saved", False)
+
 
 # ─── LOAD TREE & LINKS ──────────────────────────────────────────
 with open("tree.json", encoding="utf-8") as f:
@@ -120,18 +122,28 @@ def save_user_answers():
 
     sh = client.open_by_key(st.secrets["sheets"]["answers_sheet_id"])
     ws_name = st.secrets["sheets"].get("worksheet_name")
-    ws = sh.worksheet(ws_name) if ws_name else sh.sheet1  # 1ʳᵉ feuille sinon
+    ws = sh.worksheet(ws_name) if ws_name else sh.sheet1
 
+    # Alle Antworten aus dem aktuellen Tree-State
     row = {
         "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
         "user_id":   st.session_state.user_id,
         **st.session_state.tree_answers,
     }
 
-    # ligne d’en-tête si la feuille est vide
-    if ws.row_count == 0 or ws.acell("A1").value == "":
-        ws.append_row(list(row.keys()))
+    new_header = list(row.keys())
 
+    if ws.row_count == 0 or ws.acell("A1").value == "":
+        # Sheet ist leer → Header neu schreiben
+        ws.append_row(new_header)
+    else:
+        existing_header = ws.row_values(1)
+        if existing_header != new_header:
+            # Header hat sich geändert → ersetzen
+            ws.delete_rows(1)
+            ws.insert_row(new_header, 1)
+
+    # Zeile anhängen
     ws.append_row(list(row.values()))
 
 # ─── ADVANCE TREE ───────────────────────────────────────────────
@@ -151,19 +163,19 @@ def advance_tree(next_node: str, user_reply: str):
     # Store the user's reply
     st.session_state.chat_history.append(HumanMessage(content=user_reply))
     st.session_state.tree_answers[cur] = user_reply
-    st.session_state.tree_node = next_node
 
-    # Add the next question or answer to the chat
+    # Next question
+    st.session_state.tree_node = next_node
     nxt_q = TREE[next_node].get("frage") or TREE[next_node].get("antwort")
     if nxt_q and nxt_q != st.session_state.last_tree_msg:
         st.session_state.chat_history.append(AIMessage(content=nxt_q))
         st.session_state.last_tree_msg = nxt_q
 
-    # Check if this was the final step
-    if next_node not in TREE or "antwort" in TREE.get(next_node, {}):
-        # Any node with a final answer text = completion
+    # Speichern nur wenn letzter Knoten
+    if next_node == "chat":
         st.session_state.tree_complete = True
         save_user_answers()
+
 
 # ─── HANDLE FREE CHAT ───────────────────────────────────────────
 def handle_free_chat(txt: str):
@@ -231,6 +243,11 @@ def _save_lead(
 
 # ---------- Hauptfunktion --------------------------------------------------
 def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
+    # Speichern garantiert einmalig
+    if not st.session_state.get("answers_saved", False):
+        save_user_answers()
+        st.session_state["answers_saved"] = True
+
     if "matched_programmes" not in st.session_state:
         profile  = "\n".join(f"{k}: {v}" for k, v in st.session_state.tree_answers.items())
         user_loc = st.session_state.tree_answers.get("location", "")
@@ -239,8 +256,16 @@ def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
         )
 
     programmes = st.session_state.matched_programmes
+
     if not programmes:
-        st.chat_message("ai").markdown("❌ Leider passt kein Förderprogramm ausreichend zu Ihrem Profil.")
+        with st.chat_message("ai"):
+            st.markdown("""
+❌ Leider konnte der KI-Agent kein passendes Fördermittel finden.
+
+Nutzen Sie dennoch Ihre Chance auf eine kostenfreie Erstberatung.  
+Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihren Fördermöglichkeiten.
+""")
+            show_contact_form()
         return
 
     st.markdown(
@@ -502,6 +527,85 @@ for m in st.session_state.chat_history:
         elif "button_label" in current:
             st.link_button(current["button_label"], current["button_link"])
 
+
+ # --- formular when nothing found -------------------------
+def show_contact_form():
+    # Anker für Sprung-Links
+    st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
+
+    with st.form("lead_form", clear_on_submit=True):
+        st.markdown("### Kontaktformular")
+
+        st.markdown(
+            "Bitte füllen Sie das folgende Formular aus – wir senden Ihnen die passenden Fördermittelvorschläge per E-Mail."
+        )
+
+        unternehmen = st.text_input(label="", placeholder="Unternehmensname *")
+        name = st.text_input(label="", placeholder="Vorname, Nachname *")
+        email = st.text_input(label="", placeholder="E-Mail-Adresse *")
+        phone = st.text_input(label="", placeholder="Telefonnummer (optional)")
+
+        st.markdown(
+            """
+            Die Welt der Fördermittel ist ständig im Wandel – gerne halten wir Sie in regelmäßigen Abständen auf dem Laufenden.
+            Sie können diese Benachrichtigungen jederzeit abbestellen.
+            """
+        )
+        newsletter_optin = st.checkbox(
+            "Ich stimme zu, andere Benachrichtigungen von Fördermittel-Vergleich.de zu erhalten."
+        )
+
+        st.markdown(
+            """
+            Um Ihnen das Ergebnis Ihres Förderchecks mitzuteilen, müssen wir Ihre personenbezogenen Daten speichern und verarbeiten.
+            """
+        )
+        datenschutz_optin = st.checkbox(
+            "Ich stimme zu, dass meine Angaben zur Kontaktaufnahme und zur Bearbeitung meines Anliegens (z. B. zur Terminvereinbarung) gemäß der [Datenschutzerklärung](https://www.xn--frdermittel-vergleich-hec.de/datenschutz/) verarbeitet werden.*",
+            help="Pflichtfeld"
+        )
+
+        st.markdown(
+            """
+            <small>
+            Diese Einwilligung kann jederzeit (auch direkt im Anschluss) widerrufen werden. Informationen zum Abbestellen sowie unsere Datenschutzpraktiken und unsere Verpflichtung zum Schutz der Privatsphäre finden Sie in unseren Datenschutzbestimmungen.
+            </small>
+            """,
+            unsafe_allow_html=True
+        )
+
+        submitted = st.form_submit_button("Absenden")
+        if submitted:
+            errors = []
+
+            if not unternehmen.strip():
+                errors.append("Bitte geben Sie den Unternehmensnamen an.")
+            if not name.strip():
+                errors.append("Bitte geben Sie Ihren Namen an.")
+            if not email.strip():
+                errors.append("Bitte geben Sie Ihre E-Mail-Adresse an.")
+            if not datenschutz_optin:
+                errors.append("Sie müssen der Datenschutzerklärung zustimmen.")
+
+            import re
+            email_regex = r"[^@]+@[^@]+\.[^@]+"
+            if email and not re.match(email_regex, email):
+                errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+
+            if errors:
+                for e in errors:
+                    st.error(e)
+            else:
+                _save_lead(
+                    unternehmen,
+                    name,
+                    phone,
+                    email,
+                    st.session_state.get("lead_programme", {}).get("title", "X Leider Lead aus Formular"),
+                    newsletter_optin,
+                    datenschutz_optin
+                )
+                st.success("Vielen Dank – wir melden uns innerhalb von 24 Stunden mit passenden Fördermöglichkeiten!")
 
 
 # ─── ALWAYS-ON FREE CHAT ────────────────────────────────────────

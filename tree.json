@@ -13,7 +13,8 @@
   "taxable_in_germany": {
     "frage": "Ist das Unternehmen in Deutschland steuerpflichtig?",
     "optionen": {
-      "Weiter": "location"
+      "Ja": "location",
+      "Nein": "location"
     }
   },
 
@@ -43,14 +44,14 @@
   },
 
   "company_founded": {
-    "frage": "Wann wurde das Unternehmen gegründet?",
+    "frage": "In welchem Jahr wurde das Unternehmen gegründet?",
     "optionen": {
       "Weiter": "retrospective_costs"
     }
   },
 
   "retrospective_costs": {
-    "frage": "Hatten Sie seit 2020 bereits Kosten für Forschung und Entwicklung? Wenn ja, wie hoch waren diese?",
+    "frage": "Hatten Sie seit 2020 bereits Kosten für Forschung und Entwicklung? Wenn ja, wie hoch waren diese (in EUR)?",
     "optionen": {
       "Weiter": "industry"
     }
