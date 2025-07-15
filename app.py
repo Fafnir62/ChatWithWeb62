@@ -257,6 +257,7 @@ def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
 
     programmes = st.session_state.matched_programmes
 
+    # Wenn keine Programme gefunden → Fallback
     if not programmes:
         with st.chat_message("ai"):
             st.markdown("""
@@ -268,29 +269,66 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
             show_contact_form()
         return
 
-    st.markdown(
-            f"""
-            <p style='text-align:center; margin:1.5rem 0; font-size:1.1rem; line-height:1.4;'>
-            🚀 Herzlichen Glückwunsch! Aufgrund Ihrer Angaben scheint es Fördermöglichkeiten für Ihr Projekt zu geben. Diese Förderprogramme hat der KI-Agent als besonders passend bewertet.
-            </p>
-            """,
-            unsafe_allow_html=True)
+    # Immer sicherstellen: mind. 3 Programme (1 normal, 2 blurred)
+    while len(programmes) < 3:
+        programmes.append({
+            "title": "Premium-Angebot",
+            "description": "Details werden nach Kontaktaufnahme bereitgestellt.",
+            "funding_area": "Wird individuell geprüft",
+            "förderart": ["Individuell"],
+            "höhe_der_förderung": None,
+            "score": 0.0
+        })
 
-    for idx, p in enumerate(programmes):
+    # ---------- 0️⃣ Intro ---------- 
+    st.markdown(
+        """
+        🚀 Herzlichen Glückwunsch! Aufgrund Ihrer Angaben scheint es Fördermöglichkeiten für Ihr Projekt zu geben.
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ---------- 1️⃣ Erstes Fördermittel ohne Blur ----------
+    st.markdown(
+        "**Dieses Fördermittel kommt für Sie in Frage.**",
+        unsafe_allow_html=True
+    )
+    p = programmes[0]
+    with st.container(border=True):
+        st.markdown(f"### {p['title']}", unsafe_allow_html=True)
+        st.write(p["description"])
+        meta = (
+            f"📍 **Gebiet:** {p['funding_area']} &nbsp;&nbsp; "
+            f"💶 **Art:** {', '.join(p['förderart'])} &nbsp;&nbsp; "
+            f"💰 **Höhe:** {p['höhe_der_förderung'] or '–'} &nbsp;&nbsp; "
+            f"📊 **Score:** {p['score']:.3f}"
+        )
+        st.markdown(meta)
+
+    # ---------- 2️⃣ Blur-Hinweis für restliche ----------
+    st.markdown(
+        """
+        **Für diese Förderprogramme hat der KI-Agent den höchsten Score ausgerechnet. Das heißt, sie werden als besonders passend bewertet. Gerne senden wir Ihnen diese Fördermittel per E-Mail. Wir melden uns innerhalb von 24 Stunden mit den konkreten Fördermöglichkeiten.**
+        """,
+        unsafe_allow_html=True
+    )
+
+    for p in programmes[1:]:
         with st.container(border=True):
-            if idx < 2:
-                # Blurred + Upgrade-Teaser mit Anfrage-Link
-                st.markdown(
-                    f"""
+            st.markdown(
+                f"""
+                <div style='
+                    position: relative;
+                    overflow: hidden;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    background-color: #f9f9f9;
+                    margin-bottom: 1rem;
+                '>
                     <div style='
-                        filter: blur(0px);
-                        pointer-events: none;
-                        user-select: none;
+                        filter: blur(6px);
                         color: gray;
-                        border: 1px solid #ddd;
                         padding: 1rem;
-                        border-radius: 8px;
-                        background-color: #f9f9f9;
                     '>
                         <h4>{p['title']}</h4>
                         <p>{p['description']}</p>
@@ -302,71 +340,31 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
                         </p>
                     </div>
                     <div style='
-                        margin-top: 0.5rem;
-                        background: #000000;
-                        padding: 1rem;
-                        color: white;
-                        font-weight: normal;
-                        text-align: center;
-                        border-radius: 8px;
-                        border: 1px solid #000000;
-                        font-family: 'DM Sans', sans-serif;
-                    '>
-                        <div style='margin-bottom:0.5rem;'>
-                            🔓 Gerne senden wir Ihnen die geeignetsten Fördermittel per E-Mail.
-                            <br>
-                            Wir melden uns innerhalb von 24 Stunden mit konkreten Fördermöglichkeiten.
-                        </div>
-                        <a href="#kontaktformular" style='
-                            display:inline-block;
-                            background-color: #ff006e;
-                            color: white;
-                            text-decoration: none;
-                            padding: 0.5rem 1rem;
-                            border-radius: 5px;
-                            font-weight: bold;
-                            font-family: 'DM Sans', sans-serif;
-                        '>Jetzt anfragen</a>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            else:
-                # Normale Anzeige
-                st.markdown(f"### {p['title']}", unsafe_allow_html=True)
-                st.write(p["description"])
-                meta = (
-                    f"📍 **Gebiet:** {p['funding_area']} &nbsp;&nbsp; "
-                    f"💶 **Art:** {', '.join(p['förderart'])} &nbsp;&nbsp; "
-                    f"💰 **Höhe:** {p['höhe_der_förderung'] or '–'} &nbsp;&nbsp; "
-                    f"📊 **Score:** {p['score']:.3f}"
-                )
-                st.markdown(meta)
-
-                # Statt Button – Link mit Anker
-                st.markdown(
-                    f"""
-                    <a href="#kontaktformular" style='
-                        display:inline-block;
-                        margin-top:0.5rem;
-                        background-color: #ff006e;
-                        color: white;
-                        text-decoration: none;
-                        padding: 0.5rem 1rem;
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background-color: rgba(255, 255, 255, 0.85);
+                        padding: 0.5rem 1.5rem;
                         border-radius: 5px;
                         font-weight: bold;
-                    '>Interesse / Rückruf</a>
-                    """,
-                    unsafe_allow_html=True
-                )  
+                        font-size: 1.2rem;
+                        color: #000;
+                        text-align: center;
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                    '>
+                        PREMIUM ANGEBOT
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-# ---------- Kontaktformular immer sichtbar --------------------------------
-    # Anker für Sprung-Links
+    # ---------- 3️⃣ Kontaktformular unten immer ----------
     st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
 
     with st.form("lead_form", clear_on_submit=True):
-        st.markdown("### Kontaktformular")
-
+        st.markdown("### Jetzt kostenfrei die am besten passenden Fördermittel erhalten.")
         st.markdown(
             "Bitte füllen Sie das folgende Formular aus – wir senden Ihnen die passenden Fördermittelvorschläge per E-Mail."
         )
@@ -405,11 +403,10 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
             unsafe_allow_html=True
         )
 
-        submitted = st.form_submit_button("Absenden")
+        submitted = st.form_submit_button("Jetzt kostenfrei anfragen")
         if submitted:
             errors = []
 
-            # Pflichtfelder prüfen
             if not unternehmen.strip():
                 errors.append("Bitte geben Sie den Unternehmensnamen an.")
             if not name.strip():
@@ -419,7 +416,6 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
             if not datenschutz_optin:
                 errors.append("Sie müssen der Datenschutzerklärung zustimmen.")
 
-            # E-Mail-Format prüfen
             import re
             email_regex = r"[^@]+@[^@]+\.[^@]+"
             if email and not re.match(email_regex, email):
@@ -439,8 +435,7 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
                     datenschutz_optin
                 )
                 st.success("Vielen Dank – wir melden uns innerhalb von 24 Stunden mit passenden Fördermöglichkeiten!")
-
-                    
+ 
 # ─── RENDER CHAT & INPUTS ───────────────────────────────────────
 st.markdown("""
 <div class="intro-box">
