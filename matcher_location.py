@@ -44,15 +44,28 @@ def adjusted_matches(profile: str,
     out: List[Dict] = []
 
     for meta, base in top_k(profile, k=base_k):
-        prog_state = normalise(meta.get("funding_area", ""))
-        score = base
-        if prog_state not in ("bund", user_state):
-            score += _PENALTY                      # location penalty
+        # Split and normalize funding_area (handles 'Bund, Bayern' etc.)
+        raw_areas = meta.get("funding_area", "")
+        funding_areas = [a.strip().lower() for a in raw_areas.split(",")]
+        normalized_areas = [normalise(area) for area in funding_areas]
 
+        score = base
+
+        # Apply penalty if user location not in list AND 'bund' not in list
+        if user_state not in normalized_areas and "bund" not in normalized_areas:
+            score += _PENALTY  # location penalty
+
+        # Keep only matches under threshold
         if score <= max_score:
-            meta = dict(meta)                      # copy
+            meta = dict(meta)
             meta["score"] = round(score, 3)
+
+            # ✅ Clean display: show only the first location
+            if "funding_area" in meta:
+                meta["funding_area"] = meta["funding_area"].split(",")[0].strip()
+
             out.append(meta)
 
+    # Sort by score (lower = better)
     out.sort(key=lambda d: d["score"])
     return out

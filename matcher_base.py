@@ -38,17 +38,42 @@ def _make_text(p: Dict) -> str:
     return "\n".join(filter(None, parts))   # leere Einträge raus
 
 # -----------------------------------------------------------
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 def _build() -> FAISS:
     emb = OpenAIEmbeddings()
-    docs = [
+
+    # Step 1: Load and convert to Documents
+    raw_docs = [
         Document(
             page_content=_make_text(p),
             metadata=p
         ) for p in _load()
     ]
-    idx = FAISS.from_documents(docs, emb)
-    idx.save_local(_INDEX)
-    return idx
+
+    # Step 2: Chunk the text into smaller parts
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
+    chunks = splitter.split_documents(raw_docs)
+
+    # Step 3: Batch the embeddings
+    batch_size = 100
+    stores = []
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i + batch_size]
+        store = FAISS.from_documents(batch, emb)
+        stores.append(store)
+
+    # Step 4: Merge the stores
+    index = stores[0]
+    for s in stores[1:]:
+        index.merge_from(s)
+
+    index.save_local(_INDEX)
+    return index
+
 
 def get_index() -> FAISS:
     if os.path.isdir(_INDEX):

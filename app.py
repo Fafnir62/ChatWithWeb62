@@ -64,21 +64,47 @@ if not st.session_state.chat_history:
 
 # ─── INIT VECTOR STORE FOR WEB SOURCES ──────────────────────────
 def init_faiss(urls, persist_dir="faiss_index"):
+    from langchain.schema import Document
+
     emb = OpenAIEmbeddings()
+
     if os.path.isdir(persist_dir):
-        return FAISS.load_local(persist_dir, emb,
-                                allow_dangerous_deserialization=True)
+        return FAISS.load_local(persist_dir, emb, allow_dangerous_deserialization=True)
+
+    # Load and collect documents
     docs = []
     for u in urls:
         docs.extend(WebBaseLoader(u).load())
-    chunks = RecursiveCharacterTextSplitter().split_documents(docs)
-    vs = FAISS.from_documents(chunks, emb)
-    vs.save_local(persist_dir)
-    return vs
 
+    # Split into smaller chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
+    chunks = text_splitter.split_documents(docs)
+
+    # Batch embedding to avoid hitting OpenAI's token limit
+    batch_size = 100
+    sub_stores = []
+
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i + batch_size]
+        sub_store = FAISS.from_documents(batch, emb)
+        sub_stores.append(sub_store)
+
+    # Merge all mini-stores into one
+    vector_store = sub_stores[0]
+    for s in sub_stores[1:]:
+        vector_store.merge_from(s)
+
+    vector_store.save_local(persist_dir)
+    return vector_store
+
+# ─── INITIALIZE VECTOR STORE IF NEEDED ──────────────────────────
 if "vector_store" not in st.session_state:
     with st.spinner("🔄 Wissensbasis wird aufgebaut…"):
         st.session_state.vector_store = init_faiss(LINKS)
+
 
 # ─── INIT LLM CHAT / RAG ────────────────────────────────────────
 if "conversation_chain" not in st.session_state:
@@ -249,13 +275,16 @@ def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
         st.session_state["answers_saved"] = True
 
     if "matched_programmes" not in st.session_state:
-        profile  = "\n".join(f"{k}: {v}" for k, v in st.session_state.tree_answers.items())
+        profile = "\n".join(f"{k}: {v}" for k, v in st.session_state.tree_answers.items())
         user_loc = st.session_state.tree_answers.get("location", "")
         st.session_state.matched_programmes = adjusted_matches(
             profile, user_location=user_loc, base_k=base_k, max_score=min_score
         )
 
     programmes = st.session_state.matched_programmes
+
+    # ✅ Sort programmes by score (descending)
+    programmes.sort(key=lambda p: p['score'], reverse=True)
 
     # Wenn keine Programme gefunden → Fallback
     if not programmes:
@@ -280,10 +309,10 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
             "score": 0.0
         })
 
-    # ---------- 0️⃣ Intro ---------- 
+    # ---------- 0️⃣ Intro ----------
     st.markdown(
         """
-        🚀 Herzlichen Glückwunsch! Aufgrund Ihrer Angaben scheint es Fördermöglichkeiten für Ihr Projekt zu geben.
+🚀 Herzlichen Glückwunsch! Aufgrund Ihrer Angaben scheint es Fördermöglichkeiten für Ihr Projekt zu geben.
         """,
         unsafe_allow_html=True
     )
@@ -308,7 +337,38 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
     # ---------- 2️⃣ Blur-Hinweis für restliche ----------
     st.markdown(
         """
-        **Für diese Förderprogramme hat der KI-Agent den höchsten Score ausgerechnet. Das heißt, sie werden als besonders passend bewertet. Gerne senden wir Ihnen diese Fördermittel per E-Mail. Wir melden uns innerhalb von 24 Stunden mit den konkreten Fördermöglichkeiten.**
+**Für diese Förderprogramme hat der KI-Agent den höchsten Score ausgerechnet. Das heißt, sie werden als besonders passend bewertet. Gerne senden wir Ihnen diese Fördermittel per E-Mail. Wir melden uns innerhalb von 24 Stunden mit den konkreten Fördermöglichkeiten.**
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ---------- CSS für Hover-Effekt ----------
+    st.markdown(
+        """
+        <style>
+        a.premium-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1rem;
+            color: #000 !important;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: color 0.3s ease;
+            text-decoration: none !important;
+            border: none !important;
+        }
+        a.premium-overlay:hover {
+            color: #ff006e !important;
+            text-decoration: none !important;
+        }
+        </style>
         """,
         unsafe_allow_html=True
     )
@@ -339,26 +399,14 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
                             📊 <strong>Score:</strong> {p['score']:.3f}
                         </p>
                     </div>
-                    <div style='
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        transform: translate(-50%, -50%);
-                        background-color: rgba(255, 255, 255, 0.85);
-                        padding: 0.5rem 1.5rem;
-                        border-radius: 5px;
-                        font-weight: bold;
-                        font-size: 1.2rem;
-                        color: #000;
-                        text-align: center;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-                    '>
-                        PREMIUM ANGEBOT
-                    </div>
+                    <a href="#kontaktformular" class="premium-overlay">
+                        Am besten passendes Fördermittel für Sie
+                    </a>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
+
 
     # ---------- 3️⃣ Kontaktformular unten immer ----------
     st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
