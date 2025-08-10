@@ -119,3 +119,19 @@ Optional: Ändert den Icon-Container
 }
 
 */
+
+/* Prevent selection & disable interaction for blurred results */
+.blurred-content {
+    filter: blur(6px);
+    color: gray;
+    padding: 1rem;
+}
+
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none; /* iOS long-press */
+    pointer-events: none;        /* Ignore clicks inside blurred text */
+}

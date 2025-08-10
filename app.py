@@ -267,6 +267,48 @@ def _save_lead(
         value_input_option="RAW"
     )
 
+def _save_matches_to_sheet(programmes: list) -> None:
+    """Speichert die berechneten Fördermittel-Matches in ein separates Sheet."""
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=[
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+    )
+    client = gspread.authorize(creds)
+    sh = client.open_by_key(st.secrets["sheets"]["answers_sheet_id"])
+
+    # Worksheet "Matched Programmes" öffnen oder neu anlegen
+    try:
+        ws = sh.worksheet("Matched Programmes")
+    except gspread.WorksheetNotFound:
+        ws = sh.add_worksheet(title="Matched Programmes", rows="1000", cols="20")
+        ws.append_row(
+            [
+                "timestamp", "user_id", "title", "description",
+                "funding_area", "förderart", "höhe_der_förderung", "score"
+            ],
+            value_input_option="RAW"
+        )
+
+    # Jede Zeile für jedes Programm speichern
+    ts = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    for p in programmes:
+        ws.append_row(
+            [
+                ts,
+                st.session_state.user_id,
+                p.get("title", ""),
+                p.get("description", ""),
+                p.get("funding_area", ""),
+                ", ".join(p.get("förderart", [])),
+                p.get("höhe_der_förderung", "") or "",
+                f"{p.get('score', 0):.3f}",
+            ],
+            value_input_option="RAW"
+        )
+
 # ---------- Hauptfunktion --------------------------------------------------
 def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
     # Speichern garantiert einmalig
@@ -282,9 +324,13 @@ def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
         )
 
     programmes = st.session_state.matched_programmes
-
     # ✅ Sort programmes by score (descending)
     programmes.sort(key=lambda p: p['score'], reverse=True)
+
+    # ✅ Save matched programmes to Google Sheet (only once)
+    if not st.session_state.get("matches_shown", False):
+        _save_matches_to_sheet(programmes)
+        st.session_state["matches_shown"] = True
 
     # Wenn keine Programme gefunden → Fallback
     if not programmes:
@@ -385,11 +431,9 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
                     background-color: #f9f9f9;
                     margin-bottom: 1rem;
                 '>
-                    <div style='
-                        filter: blur(6px);
-                        color: gray;
-                        padding: 1rem;
-                    '>
+                    <div class="blurred-content no-select"
+                        oncopy="return false" oncut="return false"
+                        ondragstart="return false" onselectstart="return false">
                         <h4>{p['title']}</h4>
                         <p>{p['description']}</p>
                         <p>
