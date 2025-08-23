@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./.streamlit:/app/.streamlit
+    restart: unless-stopped
