@@ -310,151 +310,95 @@ def _save_matches_to_sheet(programmes: list) -> None:
         )
 
 # ---------- Hauptfunktion --------------------------------------------------
-def show_funding_matches(min_score: float = 0.30, base_k: int = 20) -> None:
-    # Speichern garantiert einmalig
+def show_funding_matches(min_score: float = 0.35, base_k: int = 20) -> None:
+    # Save answers exactly once
     if not st.session_state.get("answers_saved", False):
         save_user_answers()
         st.session_state["answers_saved"] = True
 
+    # Compute matches once per session
     if "matched_programmes" not in st.session_state:
         profile = "\n".join(f"{k}: {v}" for k, v in st.session_state.tree_answers.items())
         user_loc = st.session_state.tree_answers.get("location", "")
-        st.session_state.matched_programmes = adjusted_matches(
-            profile, user_location=user_loc, base_k=base_k, max_score=min_score
-        )
 
-    programmes = st.session_state.matched_programmes
-    # ✅ Sort programmes by score (descending)
-    programmes.sort(key=lambda p: p['score'], reverse=True)
+        # tolerant to adjusted_matches signature (min_score vs max_score)
+        try:
+            matches = adjusted_matches(
+                profile, user_location=user_loc, base_k=base_k, min_score=min_score
+            )
+        except TypeError:
+            matches = adjusted_matches(
+                profile, user_location=user_loc, base_k=base_k, max_score=min_score
+            )
 
-    # ✅ Save matched programmes to Google Sheet (only once)
+        st.session_state.matched_programmes = matches or []
+
+    programmes = list(st.session_state.matched_programmes)
+
+    # ⬇️ Sort so smaller score is better (ascending)
+    programmes.sort(key=lambda p: p.get("score", 0.0))
+
+    # Save matched programmes to Google Sheet (only once)
     if not st.session_state.get("matches_shown", False):
         _save_matches_to_sheet(programmes)
         st.session_state["matches_shown"] = True
 
-    # Wenn keine Programme gefunden → Fallback
+    # Fallback if none
     if not programmes:
         with st.chat_message("ai"):
-            st.markdown("""
+            st.markdown(
+                """
 ❌ Leider konnte der KI-Agent kein passendes Fördermittel finden.
 
 Nutzen Sie dennoch Ihre Chance auf eine kostenfreie Erstberatung.  
 Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihren Fördermöglichkeiten.
-""")
+"""
+            )
             show_contact_form()
         return
 
-    # Immer sicherstellen: mind. 3 Programme (1 normal, 2 blurred)
-    while len(programmes) < 3:
-        programmes.append({
-            "title": "Premium-Angebot",
-            "description": "Details werden nach Kontaktaufnahme bereitgestellt.",
-            "funding_area": "Wird individuell geprüft",
-            "förderart": ["Individuell"],
-            "höhe_der_förderung": None,
-            "score": 0.0
-        })
-
-    # ---------- 0️⃣ Intro ----------
+    # ---------- Intro (your exact copy + score note) ----------
     st.markdown(
         """
 🚀 Herzlichen Glückwunsch! Aufgrund Ihrer Angaben scheint es Fördermöglichkeiten für Ihr Projekt zu geben.
         """,
         unsafe_allow_html=True
     )
-
-    # ---------- 1️⃣ Erstes Fördermittel ohne Blur ----------
     st.markdown(
-        "**Dieses Fördermittel kommt für Sie in Frage.**",
+        "_Hinweis: Ein kleinerer Score (näher an 0) bedeutet eine bessere Übereinstimmung._",
         unsafe_allow_html=True
     )
-    p = programmes[0]
-    with st.container(border=True):
-        st.markdown(f"### {p['title']}", unsafe_allow_html=True)
-        st.write(p["description"])
-        meta = (
-            f"📍 **Gebiet:** {p['funding_area']} &nbsp;&nbsp; "
-            f"💶 **Art:** {', '.join(p['förderart'])} &nbsp;&nbsp; "
-            f"💰 **Höhe:** {p['höhe_der_förderung'] or '–'} &nbsp;&nbsp; "
-            f"📊 **Score:** {p['score']:.3f}"
-        )
-        st.markdown(meta)
+    st.markdown("**Dieses Fördermittel kommt für Sie in Frage.**", unsafe_allow_html=True)
 
-    # ---------- 2️⃣ Blur-Hinweis für restliche ----------
-    st.markdown(
-        """
-**Für diese Förderprogramme hat der KI-Agent den höchsten Score ausgerechnet. Das heißt, sie werden als besonders passend bewertet. Gerne senden wir Ihnen diese Fördermittel per E-Mail. Wir melden uns innerhalb von 24 Stunden mit den konkreten Fördermöglichkeiten.**
-        """,
-        unsafe_allow_html=True
-    )
+    # ---------- Show ALL programmes (no numbers, no blur) ----------
+    for p in programmes:
+        title = p.get("title", "Ohne Titel")
+        desc = p.get("description", "")
+        area = p.get("funding_area", "–")
+        art_val = p.get("förderart", [])
+        art = ", ".join(art_val) if isinstance(art_val, list) else (art_val or "–")
+        amount = p.get("höhe_der_förderung") or "–"
+        score = p.get("score", 0.0)
 
-    # ---------- CSS für Hover-Effekt ----------
-    st.markdown(
-        """
-        <style>
-        a.premium-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 1rem;
-            color: #000 !important;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: color 0.3s ease;
-            text-decoration: none !important;
-            border: none !important;
-        }
-        a.premium-overlay:hover {
-            color: #ff006e !important;
-            text-decoration: none !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    for p in programmes[1:]:
         with st.container(border=True):
+            st.markdown(f"### {title}", unsafe_allow_html=True)
+            if desc:
+                st.write(desc)
+            meta = (
+                f"📍 **Gebiet:** {area} &nbsp;&nbsp; "
+                f"💶 **Art:** {art} &nbsp;&nbsp; "
+                f"💰 **Höhe:** {amount} &nbsp;&nbsp; "
+                f"📊 **Score:** {score:.3f}"
+            )
+            st.markdown(meta)
+            # bold, no underline link to the contact form
             st.markdown(
-                f"""
-                <div style='
-                    position: relative;
-                    overflow: hidden;
-                    border: 1px solid #ddd;
-                    border-radius: 8px;
-                    background-color: #f9f9f9;
-                    margin-bottom: 1rem;
-                '>
-                    <div class="blurred-content no-select"
-                        oncopy="return false" oncut="return false"
-                        ondragstart="return false" onselectstart="return false">
-                        <h4>{p['title']}</h4>
-                        <p>{p['description']}</p>
-                        <p>
-                            📍 <strong>Gebiet:</strong> {p['funding_area']} &nbsp;&nbsp;
-                            💶 <strong>Art:</strong> {', '.join(p['förderart'])} &nbsp;&nbsp;
-                            💰 <strong>Höhe:</strong> {p['höhe_der_förderung'] or '–'} &nbsp;&nbsp;
-                            📊 <strong>Score:</strong> {p['score']:.3f}
-                        </p>
-                    </div>
-                    <a href="#kontaktformular" class="premium-overlay">
-                        Am besten passendes Fördermittel für Sie
-                    </a>
-                </div>
-                """,
+                "<a href='#kontaktformular' style='text-decoration:none; font-weight:700;'>➜ Interesse? Zum Kontaktformular</a>",
                 unsafe_allow_html=True
             )
 
-
-    # ---------- 3️⃣ Kontaktformular unten immer ----------
+    # ---------- Contact form ----------
     st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
-
     with st.form("lead_form", clear_on_submit=True):
         st.markdown("### Jetzt kostenfrei die am besten passenden Fördermittel erhalten.")
         st.markdown(
@@ -486,19 +430,9 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
             help="Pflichtfeld"
         )
 
-        st.markdown(
-            """
-            <small>
-            Diese Einwilligung kann jederzeit (auch direkt im Anschluss) widerrufen werden. Informationen zum Abbestellen sowie unsere Datenschutzpraktiken und unsere Verpflichtung zum Schutz der Privatsphäre finden Sie in unseren Datenschutzbestimmungen.
-            </small>
-            """,
-            unsafe_allow_html=True
-        )
-
         submitted = st.form_submit_button("Jetzt kostenfrei anfragen")
         if submitted:
             errors = []
-
             if not unternehmen.strip():
                 errors.append("Bitte geben Sie den Unternehmensnamen an.")
             if not name.strip():
@@ -527,12 +461,12 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
                     datenschutz_optin
                 )
                 st.success("Vielen Dank – wir melden uns innerhalb von 24 Stunden mit passenden Fördermöglichkeiten!")
- 
+
 # ─── RENDER CHAT & INPUTS ───────────────────────────────────────
 st.markdown("""
 <div class="intro-box">
-👋 Hallo! Ich bin <strong>Ihr kostenfreier KI-Fördermittelberater</strong>.
-Ich helfe Ihnen in Rekordzeit das passende Fördermittel zu finden und die Förderfähigkeit zu überprüfen. Bitte beantworte folgende 10 Fragen möglichst ausführlich, um das beste Ergebnis zu erzielen.
+👋 Hallo! Ich bin <strong>dein kostenfreier KI-Agent für Fördermittel</strong>.
+Ich helfe dir in Rekordzeit das passende Fördermittel zu finden und die Förderfähigkeit zu überprüfen. Bitte beantworte folgende 10 Fragen möglichst ausführlich, um das beste Ergebnis zu erzielen.
 </div>
 """, unsafe_allow_html=True)
 
@@ -702,4 +636,4 @@ def show_contact_form():
 
 # ─── SHOW PROGRAMME MATCHES (once) ──────────────────────────────
 if st.session_state.tree_complete:
-    show_funding_matches(min_score=0.35, base_k=20)
+    show_funding_matches(min_score=0.45, base_k=20)

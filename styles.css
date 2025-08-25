@@ -135,3 +135,44 @@ Optional: Ändert den Icon-Container
     -webkit-touch-callout: none; /* iOS long-press */
     pointer-events: none;        /* Ignore clicks inside blurred text */
 }
+
+/* Hide the 3-dots (kebab) menu / toolbar */
+div[data-testid="stToolbar"] { 
+    display: none !important;
+  }
+  
+  /* Hide the “Deploy” pill shown on Streamlit Cloud */
+  div[data-testid="stDecoration"] {
+    display: none !important;
+  }
+  
+  /* Legacy fallback (older Streamlit) */
+  #MainMenu { 
+    visibility: hidden;
+  }
+
+  /* Floating scroll-down button (bottom-right) */
+a.scroll-down {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0e4d92;              /* pick your brand color */
+    color: #fff !important;
+    text-decoration: none !important; /* no underline */
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1;
+    box-shadow: 0 10px 20px rgba(0,0,0,.18);
+    z-index: 9999;
+  }
+  a.scroll-down:hover {
+    filter: brightness(1.05);
+    transform: translateY(1px);
+  }
+  
