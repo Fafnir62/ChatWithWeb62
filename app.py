@@ -400,9 +400,12 @@ Wir melden uns innerhalb von zwei Werktagen bei Ihnen mit Einschätzungen zu Ihr
     # ---------- Contact form ----------
     st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
     with st.form("lead_form", clear_on_submit=True):
-        st.markdown("### Jetzt kostenfrei die am besten passenden Fördermittel erhalten.")
+        st.markdown("### Herzlichen Glückwunsch - der erste Schritt ist getan!")
         st.markdown(
-            "Bitte füllen Sie das folgende Formular aus – wir senden Ihnen die passenden Fördermittelvorschläge per E-Mail."
+            "Checke jetzt kostenfrei mit uns die Förderfähigkeit für dein Projekt."
+        )
+        st.markdown(
+            "Bitte fülle das folgende Formular aus - wir kommen direkt auf dich zu."
         )
 
         unternehmen = st.text_input(label="", placeholder="Unternehmensname *")
@@ -558,8 +561,12 @@ def show_contact_form():
         st.markdown("### Kontaktformular")
 
         st.markdown(
-            "Bitte füllen Sie das folgende Formular aus – wir senden Ihnen die passenden Fördermittelvorschläge per E-Mail."
+            "Checke jetzt kostenfrei mit uns die Förderfähigkeit für dein Projekt."
         )
+        st.markdown(
+            "Bitte fülle das folgende Formular aus - wir kommen direkt auf dich zu."
+        )
+
 
         unternehmen = st.text_input(label="", placeholder="Unternehmensname *")
         name = st.text_input(label="", placeholder="Vorname, Nachname *")
