@@ -1,6 +1,6 @@
 {
   "start": {
-    "frage": "Damit ich passende Förderprogramme finden kann, sagen Sie mir bitte, welches Thema für Sie am besten passt",
+    "frage": "Damit ich passende Förderprogramme finden kann, sag mir bitte, welches Thema für dich am besten passt",
     "optionen": {
       "Forschung & Entwicklung": "taxable_in_germany",
       "Gebäude- und Energiesanierung": "taxable_in_germany",
@@ -11,7 +11,7 @@
   },
 
   "taxable_in_germany": {
-    "frage": "Ist das Unternehmen in Deutschland steuerpflichtig?",
+    "frage": "Ist dein Unternehmen in Deutschland steuerpflichtig?",
     "optionen": {
       "Ja": "location",
       "Nein": "location"
@@ -19,7 +19,7 @@
   },
 
   "location": {
-    "frage": "In welchem Bundesland ist das Unternehmen ansässig?",
+    "frage": "In welchem Bundesland bist du bzw. ist dein Unternehmen ansässig?",
     "select": {
       "choices": [
         "Baden-Württemberg",
@@ -44,28 +44,28 @@
   },
 
   "company_founded": {
-    "frage": "In welchem Jahr wurde das Unternehmen gegründet?",
+    "frage": "In welchem Jahr wurde dein Unternehmen gegründet?",
     "optionen": {
       "Weiter": "retrospective_costs"
     }
   },
 
   "retrospective_costs": {
-    "frage": "Hatten Sie seit 2020 bereits Kosten für Forschung und Entwicklung? Wenn ja, wie hoch waren diese (in EUR)?",
+    "frage": "Hattest du seit 2020 bereits Kosten für Forschung und Entwicklung? Wenn ja, wie hoch waren sie (in EUR)?",
     "optionen": {
       "Weiter": "industry"
     }
   },
 
   "industry": {
-    "frage": "In welcher Branche sind Sie aktiv?",
+    "frage": "In welcher Branche bist du bzw. ist dein Unternehmen aktiv?",
     "optionen": {
       "Weiter": "project_description"
     }
   },
 
   "project_description": {
-    "frage": "Bitte beschreiben Sie in einigen Sätzen das Projekt, für das Sie eine Förderung beantragen möchten, möglichst genau. Zum Beispiel:\n\n- Was wollen Sie gründen, entwickeln, erforschen, sanieren, oder finanzieren?\n- Welche konkreten Schritte planen Sie?",
+    "frage": "Bitte beschreibe in einigen Sätzen das Projekt, für das du eine Förderung beantragen möchtest, möglichst genau. Zum Beispiel:\n\n- Was willst du gründen, entwickeln, erforschen, sanieren oder finanzieren?\n- Welche konkreten Schritte planst du?",
     "optionen": {
       "Weiter": "project_start"
     }
@@ -86,14 +86,14 @@
   },
 
   "own_funds": {
-    "frage": "Wie viel Eigenanteil davon können Sie aufbringen (in EUR)?",
+    "frage": "Wie viel Eigenanteil davon kannst du aufbringen (in EUR)?",
     "optionen": {
       "Absenden": "chat"
     }
   },
 
   "chat": {
-    "antwort": "✅ Vielen Dank! Anhand Ihrer Angaben suche ich jetzt nach passenden Förderprogrammen.",
+    "antwort": "✅ Vielen Dank! Anhand deiner Angaben suche ich jetzt nach passenden Förderprogrammen.",
     "button_label": "Zum Chat",
     "button_link": "/"
   }
