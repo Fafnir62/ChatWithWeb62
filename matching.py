@@ -1,0 +1,472 @@
+# matching.py
+import json
+import math
+import os
+import re
+from collections import Counter, defaultdict
+from typing import Dict, List, Optional
+
+# Load .env (harmless if called twice)
+try:
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+except Exception:
+    pass
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Optional OpenAI Embeddings (hybrid ranking)
+# ─────────────────────────────────────────────────────────────────────────────
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+
+_openai_available = False
+_client = None
+_embedding_model = "text-embedding-3-small"  # switch to -large for max accuracy
+
+if OPENAI_API_KEY:
+    try:
+        from openai import OpenAI  # type: ignore
+        _client = OpenAI(api_key=OPENAI_API_KEY)
+        _openai_available = True
+    except Exception:
+        try:
+            import openai  # type: ignore
+            openai.api_key = OPENAI_API_KEY
+            _client = openai
+            _openai_available = True
+            _embedding_model = "text-embedding-3-small"
+        except Exception:
+            _openai_available = False
+            _client = None
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Basic tokenization
+# ─────────────────────────────────────────────────────────────────────────────
+
+GERMAN_STOPWORDS = {
+    "und","oder","der","die","das","ein","eine","einer","einem","einen","den","dem",
+    "zu","mit","für","im","in","am","an","auf","aus","als","bei","vom","von","des",
+    "ist","sind","werden","wird","auch","sowie","bis","dass","daß","nach","vor",
+    "durch","ohne","unter","über","so","wenn","diese","dieser","dieses","denn","etc",
+    "sie","er","es","wir","ihr","ihnen","ihre","ihren","ihrer","euch","man","kann",
+    "können","nicht","nur","noch","schon"
+}
+
+UMLAUT_MAP = str.maketrans({
+    "ä": "ae", "ö": "oe", "ü": "ue",
+    "Ä": "ae", "Ö": "oe", "Ü": "ue",
+    "ß": "ss"
+})
+
+def normalize_text(text: str) -> str:
+    if not text:
+        return ""
+    text = text.translate(UMLAUT_MAP).lower()
+    text = re.sub(r"[^\w\s]", " ", text, flags=re.UNICODE)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+def tokenize(text: str) -> List[str]:
+    norm = normalize_text(text)
+    return [t for t in norm.split(" ") if t and t not in GERMAN_STOPWORDS and not t.isdigit()]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BM25
+# ─────────────────────────────────────────────────────────────────────────────
+
+def bm25_scores(query_tokens: List[str], docs_tokens: List[List[str]], k1=1.5, b=0.75) -> List[float]:
+    if not docs_tokens:
+        return []
+    N = len(docs_tokens)
+    doc_lens = [len(d) for d in docs_tokens]
+    avgdl = sum(doc_lens) / N if N else 0.0
+
+    df = defaultdict(int)
+    query_set = set(query_tokens)
+    for dtoks in docs_tokens:
+        unique = set(dtoks)
+        for qt in query_set:
+            if qt in unique:
+                df[qt] += 1
+
+    idf = {}
+    for qt in query_set:
+        idf[qt] = math.log((N - df[qt] + 0.5) / (df[qt] + 0.5) + 1.0)
+
+    scores = []
+    for idx, dtoks in enumerate(docs_tokens):
+        tf = Counter(dtoks)
+        denom = k1 * (1 - b + b * (doc_lens[idx] / (avgdl or 1.0)))
+        s = 0.0
+        for qt in query_tokens:
+            f = tf.get(qt, 0)
+            if f == 0:
+                continue
+            s += idf[qt] * ((f * (k1 + 1)) / (f + denom))
+        scores.append(s)
+    return scores
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Filters
+# ─────────────────────────────────────────────────────────────────────────────
+
+BUNDESLAND_SYNONYMS = {
+    "nrw": "Nordrhein-Westfalen",
+    "nordrhein westfalen": "Nordrhein-Westfalen",
+    "baden wuerttemberg": "Baden-Württemberg",
+    "baden-wuerttemberg": "Baden-Württemberg",
+    "bayern": "Bayern",
+    "berlin": "Berlin",
+    "brandenburg": "Brandenburg",
+    "bremen": "Bremen",
+    "hamburg": "Hamburg",
+    "hessen": "Hessen",
+    "mecklenburg vorpommern": "Mecklenburg-Vorpommern",
+    "niedersachsen": "Niedersachsen",
+    "rheinland pfalz": "Rheinland-Pfalz",
+    "saarland": "Saarland",
+    "sachsen": "Sachsen",
+    "sachsen anhalt": "Sachsen-Anhalt",
+    "schleswig holstein": "Schleswig-Holstein",
+    "thueringen": "Thüringen",
+    "thüringen": "Thüringen",
+}
+
+VALID_KATEGORIEN = {"Innovation", "Investition", "Finanzierung"}
+
+def normalize_bundesland(bl: str) -> str:
+    if not bl or bl == "not found":
+        return ""
+    key = normalize_text(bl).replace("-", " ").strip()
+    return BUNDESLAND_SYNONYMS.get(key, bl)
+
+def parse_number_eur(val) -> float:
+    if val is None or val == "not found":
+        return -1.0
+    if isinstance(val, (int, float)):
+        try:
+            return float(val)
+        except Exception:
+            return -1.0
+    s = str(val).replace(".", "").replace(" ", "").replace(",", ".")
+    try:
+        return float(s)
+    except Exception:
+        return -1.0
+
+def _has_zuschuss(foerderart_list: List[str]) -> bool:
+    if not foerderart_list:
+        return False
+    return any("zuschuss" in (fa or "").lower() for fa in foerderart_list)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data I/O
+# ─────────────────────────────────────────────────────────────────────────────
+
+def load_programs(json_path: str) -> List[Dict]:
+    if not os.path.isabs(json_path):
+        base = os.path.dirname(os.path.abspath(__file__))
+        json_path = os.path.join(base, json_path)
+    with open(json_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Filtering
+# ─────────────────────────────────────────────────────────────────────────────
+
+def apply_filters(programs: List[Dict], answers: Dict) -> List[Dict]:
+    """
+    Filters:
+      1) Kategorie (Innovation, Investition, Finanzierung)
+      2) Bundesland: keep only items with funding_area == BL OR "Bund"
+      3) Zuschuss filter: if eigenanteil == 0 => drop Zuschuss Fördermittel
+    """
+    kategorie = answers.get("kategorie", "")
+    bl = normalize_bundesland(answers.get("bundesland", ""))
+    eigen = parse_number_eur(answers.get("eigenanteil_eur"))
+
+    filtered = []
+    for p in programs:
+        # (1) Kategorie
+        cat = (p.get("funding_category") or "").strip()
+        if kategorie in VALID_KATEGORIEN and cat != kategorie:
+            continue
+
+        # (2) Bundesland (or Bund)
+        area = (p.get("funding_area") or "").strip()
+        if bl and not (area == bl or area == "Bund"):
+            continue
+
+        # (3) Zuschuss filter if eigenanteil is 0
+        foerderart = p.get("förderart") or []
+        if eigen == 0.0 and _has_zuschuss(foerderart):
+            continue
+
+        filtered.append(p)
+
+    return filtered
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Text prep
+# ─────────────────────────────────────────────────────────────────────────────
+
+def build_doc_text(p: Dict, for_embedding: bool = False) -> str:
+    parts = [
+        p.get("title", ""),
+        p.get("description", ""),
+        p.get("funding_category", ""),
+        p.get("funding_area", ""),
+        " ".join(p.get("förderart") or []),
+    ]
+    alldetails = (p.get("alldetails") or "").strip()
+    if for_embedding and alldetails:
+        parts.append(alldetails[:2000])
+    return " \n".join([str(x) for x in parts if x])
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Embedding utils
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _embed_texts(texts: List[str]) -> Optional[List[List[float]]]:
+    if not _openai_available or not _client:
+        return None
+    try:
+        if hasattr(_client, "embeddings"):
+            resp = _client.embeddings.create(model=_embedding_model, input=texts)
+            return [d.embedding for d in resp.data]
+        if hasattr(_client, "Embedding"):
+            resp = _client.Embedding.create(model=_embedding_model, input=texts)
+            return [d["embedding"] for d in resp["data"]]
+    except Exception:
+        return None
+    return None
+
+def _cosine(a: List[float], b: List[float]) -> float:
+    if not a or not b or len(a) != len(b):
+        return 0.0
+    dot = 0.0; na = 0.0; nb = 0.0
+    for x, y in zip(a, b):
+        dot += x * y; na += x * x; nb += y * y
+    if na == 0.0 or nb == 0.0:
+        return 0.0
+    return dot / (math.sqrt(na) * math.sqrt(nb))
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Matching main
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _query_text_from_answers(answers: Dict, project_text: str) -> str:
+    bits = [project_text or ""]
+    if answers.get("branche") and answers["branche"] != "not found":
+        bits.append(f"Branche: {answers['branche']}")
+    if answers.get("kategorie") in VALID_KATEGORIEN:
+        bits.append(f"Kategorie: {answers['kategorie']}")
+    if answers.get("projektkosten_eur") not in (None, "not found"):
+        bits.append(f"Projektkosten (EUR): {answers['projektkosten_eur']}")
+    if answers.get("eigenanteil_eur") not in (None, "not found"):
+        bits.append(f"Eigenanteil (EUR): {answers['eigenanteil_eur']}")
+    if answers.get("bundesland") and answers["bundesland"] != "not found":
+        bits.append(f"Bundesland: {answers['bundesland']}")
+    q = " | ".join([b for b in bits if b])
+    return q[:2000] if q else "Fördermittel für Unternehmen"
+
+def match_programs(
+    answers: Dict,
+    project_text: str,
+    json_path: str = "foerdermittel_normalized.json",
+    min_score: float = 0.7,                 # threshold (stricter)
+    max_results: Optional[int] = None       # show all ≥ threshold by default
+) -> List[Dict]:
+    """
+    1) Load & filter JSON (Kategorie, Bundesland/Bund, Zuschuss if Eigenanteil=0)
+    2) Rank filtered programs using a hybrid strategy:
+       - Embedding cosine similarity (OpenAI)
+       - BM25 lexical score
+       Final score = 0.7 * embedding + 0.3 * BM25 (semantic-heavy)
+    3) Return ALL items with final_score >= min_score, sorted desc (cap with max_results if given).
+    """
+    programs = load_programs(json_path)
+    filtered = apply_filters(programs, answers)
+    if not filtered:
+        return []
+
+    query_text = _query_text_from_answers(answers, project_text)
+
+    # BM25 side
+    docs_text_bm25 = [build_doc_text(p, for_embedding=False) for p in filtered]
+    docs_tokens = [tokenize(t) for t in docs_text_bm25]
+    query_tokens = tokenize(project_text or "") or tokenize(query_text)
+    bm25 = bm25_scores(query_tokens, docs_tokens)
+    max_bm25 = max(bm25) if bm25 else 1.0
+    norm_bm25 = [s / max_bm25 if max_bm25 > 0 else 0.0 for s in bm25]
+
+    # Embedding side
+    embed_scores = None
+    if _openai_available:
+        query_embed = _embed_texts([query_text])
+        if query_embed:
+            qv = query_embed[0]
+            docs_text_embed = [build_doc_text(p, for_embedding=True) for p in filtered]
+            doc_embeds = _embed_texts(docs_text_embed)
+            if doc_embeds and len(doc_embeds) == len(filtered):
+                embed_scores = [_cosine(qv, dv) for dv in doc_embeds]
+
+    # Combine with stricter semantic weight
+    if embed_scores:
+        min_e, max_e = min(embed_scores), max(embed_scores)
+        norm_emb = (
+            [(s - min_e) / (max_e - min_e) for s in embed_scores]
+            if max_e - min_e > 1e-9 else [0.0 for _ in embed_scores]
+        )
+        alpha = 0.7  # semantic-heavy
+        final_scores = [alpha * e + (1 - alpha) * b for e, b in zip(norm_emb, norm_bm25)]
+    else:
+        final_scores = norm_bm25  # fallback if embeddings unavailable
+
+    # Attach scores and filter by threshold
+    ranked = sorted(
+        (dict(p, score=float(s)) for p, s in zip(filtered, final_scores)),
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    relevant = [p for p in ranked if p["score"] >= float(min_score)]
+    if max_results is not None:
+        relevant = relevant[:max_results]
+    return relevant
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rendering (style like your old app) + scroll control + click-to-open form
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _contact_form(selected_title: Optional[str]):
+    import streamlit as st
+    if not st.session_state.get("show_contact_form"):
+        return  # only render on explicit click
+
+    st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
+    with st.form("lead_form", clear_on_submit=True):
+        st.markdown("### Herzlichen Glückwunsch - der erste Schritt ist getan!")
+        st.markdown("Checke jetzt kostenfrei mit uns die Förderfähigkeit für dein Projekt.")
+        st.markdown("Bitte fülle das folgende Formular aus - wir kommen direkt auf dich zu.")
+
+        if selected_title:
+            st.text_input("Programm", value=selected_title, disabled=True)
+
+        unternehmen = st.text_input(label="", placeholder="Unternehmensname *")
+        name = st.text_input(label="", placeholder="Vorname, Nachname *")
+        email = st.text_input(label="", placeholder="E-Mail-Adresse *")
+        phone = st.text_input(label="", placeholder="Telefonnummer (optional)")
+
+        st.markdown(
+            "Die Welt der Fördermittel ist ständig im Wandel – gerne halten wir Sie in regelmäßigen Abständen auf dem Laufenden. "
+            "Sie können diese Benachrichtigungen jederzeit abbestellen."
+        )
+        newsletter_optin = st.checkbox(
+            "Ich stimme zu, andere Benachrichtigungen von Fördermittel-Vergleich.de zu erhalten."
+        )
+
+        st.markdown(
+            "Um Ihnen das Ergebnis Ihres Förderchecks mitzuteilen, müssen wir Ihre personenbezogenen Daten speichern und verarbeiten."
+        )
+        datenschutz_optin = st.checkbox(
+            "Ich stimme zu, dass meine Angaben zur Kontaktaufnahme und zur Bearbeitung meines Anliegens "
+            "(z. B. zur Terminvereinbarung) gemäß der Datenschutzerklärung verarbeitet werden.*",
+            help="Pflichtfeld"
+        )
+
+        submitted = st.form_submit_button("Jetzt kostenfrei anfragen")
+        if submitted:
+            errors = []
+            if not unternehmen.strip():
+                errors.append("Bitte geben Sie den Unternehmensnamen an.")
+            if not name.strip():
+                errors.append("Bitte geben Sie Ihren Namen an.")
+            if not email.strip():
+                errors.append("Bitte geben Sie Ihre E-Mail-Adresse an.")
+            if not datenschutz_optin:
+                errors.append("Sie müssen der Datenschutzerklärung zustimmen.")
+
+            import re
+            if email and not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                errors.append("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+
+            if errors:
+                for e in errors:
+                    st.error(e)
+            else:
+                st.session_state["lead_submission"] = {
+                    "programm": selected_title or "Allgemeine Anfrage",
+                    "unternehmen": unternehmen,
+                    "name": name,
+                    "email": email,
+                    "phone": phone,
+                    "newsletter_optin": bool(newsletter_optin),
+                    "datenschutz_optin": bool(datenschutz_optin),
+                }
+                st.success("Vielen Dank – wir melden uns innerhalb von 24 Stunden mit passenden Fördermöglichkeiten!")
+
+def render_matches(matches: List[Dict]):
+    """
+    - Styled cards
+    - Keeps viewport on FIRST result (prevents auto-scroll to bottom)
+    - Shows contact form ONLY after clicking a card's button
+    """
+    try:
+        import streamlit as st
+        import streamlit.components.v1 as components
+    except Exception:
+        for i, m in enumerate(matches, 1):
+            print(f"{i}. {m.get('title','(ohne Titel)')}")
+        return
+
+    if not matches:
+        st.info("Kein Treffer nach den Filtern. Ändere eine Angabe oder beschreibe dein Projekt ausführlicher.")
+        return
+
+    st.markdown("🚀 Herzlichen Glückwunsch! Aufgrund Ihrer Angaben scheint es Fördermöglichkeiten für Ihr Projekt zu geben.")
+    st.caption("_Hinweis: Oben stehende Einträge sind am relevantesten._")
+
+    # Anchor before first result
+    st.markdown("<a name='top_result'></a>", unsafe_allow_html=True)
+
+    # Cards
+    for i, m in enumerate(matches):
+        title = m.get("title", "Ohne Titel")
+        desc = m.get("description", "")
+        area = m.get("funding_area", "–")
+        art_val = m.get("förderart", [])
+        art = ", ".join(art_val) if isinstance(art_val, list) else (art_val or "–")
+        amount = m.get("höhe_der_förderung") or "–"
+        score = m.get("score", None)
+
+        with st.container(border=True):
+            st.markdown(f"### {title}")
+            if desc:
+                st.write(desc)
+
+            meta_parts = [
+                f"📍 **Gebiet:** {area}",
+                f"💶 **Art:** {art}",
+                f"💰 **Höhe:** {amount}",
+            ]
+            if isinstance(score, (int, float)):
+                meta_parts.append(f"📊 **Score:** {score:.3f}")
+            st.markdown(" &nbsp;&nbsp; ".join(meta_parts))
+
+            if st.button("➜ Interesse? Kontakt aufnehmen", key=f"contact_{i}"):
+                st.session_state["show_contact_form"] = True
+                st.session_state["contact_selection"] = title
+                st.session_state["__scroll_to"] = "kontaktformular"
+                st.rerun()
+
+    # Keep viewport on the top result
+    components.html("<script>window.location.hash = '#top_result';</script>", height=0)
+
+    # Contact form (only after explicit click)
+    if st.session_state.get("show_contact_form"):
+        st.markdown("<a name='kontaktformular'></a>", unsafe_allow_html=True)
+        _contact_form(st.session_state.get("contact_selection"))
+
+        if st.session_state.get("__scroll_to") == "kontaktformular":
+            components.html("<script>window.location.hash = '#kontaktformular';</script>", height=0)
+            st.session_state["__scroll_to"] = None
